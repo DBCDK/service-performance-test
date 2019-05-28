@@ -1,14 +1,14 @@
 /*
  * Copyright (C) 2019 DBC A/S (http://dbc.dk/)
  *
- * This is part of solr-performance-test-replayer
+ * This is part of performance-test-replayer
  *
- * solr-performance-test-replayer is free software: you can redistribute it and/or modify
+ * performance-test-replayer is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * solr-performance-test-replayer is distributed in the hope that it will be useful,
+ * performance-test-replayer is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -18,8 +18,8 @@
  */
 package dk.dbc;
 
-import dk.dbc.solr.performance.replayer.Config;
-import dk.dbc.solr.performance.replayer.Replayer;
+import dk.dbc.service.performance.replayer.Config;
+import dk.dbc.service.performance.replayer.Replayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

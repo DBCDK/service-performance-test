@@ -16,31 +16,41 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package dk.dbc;
+package dk.dbc.service.performance;
 
-import dk.dbc.service.performance.recorder.Config;
-import dk.dbc.service.performance.recorder.Recorder;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
 /**
- * Master entry point
  *
  * @author Morten Bøgeskov (mb@dbc.dk)
  */
-public class Main {
+public class LineSourceTest {
 
-    private static final Logger log = LoggerFactory.getLogger(Main.class);
+    private static final Logger log = LoggerFactory.getLogger(LineSourceTest.class);
 
-    public static void main(String[] args) {
-        try {
-            Config config = Config.of(args);
-            log.debug("config = {}", config);
-            log.info("start");
-            new Recorder(config).run();
-            log.info("end");
-        } catch (ExitException e) {
-            System.exit(e.getCode());
+    @Test(timeout = 2_000L)
+    public void testInput() throws Exception {
+        System.out.println("testInput");
+
+        try (InputStream is = new ByteArrayInputStream(
+                ( "123\n" +
+                  "234\n" +
+                  "345\n" +
+                  "\n" +
+                  "456" ).getBytes(StandardCharsets.UTF_8)) ;
+             LinesInputStream lineSource = new LinesInputStream(is)) {
+            long count = lineSource.stream()
+                    .count();
+            assertThat(count, is(4L));
         }
     }
 

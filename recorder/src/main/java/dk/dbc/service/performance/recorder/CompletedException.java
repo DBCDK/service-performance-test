@@ -1,14 +1,14 @@
 /*
  * Copyright (C) 2019 DBC A/S (http://dbc.dk/)
  *
- * This is part of performance-test-common
+ * This is part of performance-test-recorder
  *
- * performance-test-common is free software: you can redistribute it and/or modify
+ * performance-test-recorder is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * performance-test-common is distributed in the hope that it will be useful,
+ * performance-test-recorder is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -16,24 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package dk.dbc;
+package dk.dbc.service.performance.recorder;
 
 /**
- * Intention is to catch this at outer-most level, and return the code
+ *
+ * RuntimeException to indicate the duration or the wanted number of output
+ * lines has been reached
+ *
  *
  * @author Morten Bøgeskov (mb@dbc.dk)
  */
-public class ExitException extends RuntimeException {
+public class CompletedException extends RuntimeException {
 
-    private static final long serialVersionUID = 6157136305870011015L;
+    private static final long serialVersionUID = -3553250338040406891L;
 
-    private final int code;
-
-    public ExitException(int code) {
-        this.code = code;
-    }
-
-    public int getCode() {
-        return code;
+    public CompletedException() {
     }
 }

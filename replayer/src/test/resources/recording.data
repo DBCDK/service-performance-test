@@ -1,4 +1,4 @@
-#{"started":"2019-03-13T09:33:06.730Z","from":"file:/home/mran/IdeaProjects/solr-performance-test/recorder/src/test/resources/log.data","duration":10000,"lines":9223372036854775807}
+#{"started":"2019-03-13T09:33:06.730Z","from":"file:/home/mran/IdeaProjects/performance-test/recorder/src/test/resources/log.data","duration":10000,"lines":9223372036854775807}
 0 facet.field=facet.type&facet.field=facet.creator&facet.field=facet.subject&facet.field=facet.language&facet.field=facet.category&facet.field=facet.date&facet.field=facet.acSource&facet.field=facet.lix&fl=REDACTED&start=0&fq=REDACTED&rows=322&q=REDACTED&tie=0.1&facet.limit=10&defType=edismax&qf=dkcclterm.em^10+rankterm.subject^3+dkcclterm.ti^2+term.default^1&pf=dkcclterm.em^15&facet.threads=8&facet.mincount=1&facet=true&wt=phps&dbcPerfTest=true
 35 q=REDACTED&defType=edismax&fl=REDACTED&start=0&fq=REDACTED&rows=99999&wt=phps&dbcPerfTest=true
 80 q=REDACTED&start=1&fq=REDACTED&fq=REDACTED&rows=0&wt=phps&dbcPerfTest=true
