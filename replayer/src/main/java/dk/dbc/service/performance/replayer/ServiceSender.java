@@ -44,7 +44,7 @@ public class ServiceSender {
      * @param collector A Log-collector
      */
     public ServiceSender(String baseUrl, LogCollector collector) {
-        this.baseUrl = baseUrl;
+        this.baseUrl = baseUrl + (baseUrl.endsWith("?") ? "" : "?");
         this.logCollector = collector;
     }
 
@@ -63,7 +63,7 @@ public class ServiceSender {
         logEntry.setQuery(q);
 
         try {
-            URL url = new URL(baseUrl + "/select?" + q );
+            URL url = new URL(baseUrl + q );
             HttpURLConnection client = (HttpURLConnection) url.openConnection();
             client.setRequestMethod("GET");
 
