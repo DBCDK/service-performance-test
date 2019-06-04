@@ -20,6 +20,7 @@ package dk.dbc.service.performance.recorder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dk.dbc.jslib.Environment;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -47,6 +48,8 @@ public final class LogLine implements Comparable<LogLine> {
 
     private static final String PERFTEST_FLAG = "dbcPerfTest=true";
 
+    public static final String SCRIPT_METHOD = "lineFilter";
+
     private final boolean valid;
     private final Instant instant;
     private final String app;
@@ -60,7 +63,7 @@ public final class LogLine implements Comparable<LogLine> {
      * @return LogLine object
      */
     // @TODO: use external mappingScript to identifiy lines to be recorded
-    public static LogLine mappingScript(String text, String mappingScript) {
+    public static LogLine mappingScript(String text, Environment mappingScript) {
         try {
             JsonNode obj = O.readTree(text);
             JsonNode timestamp = obj.get("timestamp");
@@ -68,7 +71,12 @@ public final class LogLine implements Comparable<LogLine> {
             JsonNode message = obj.get("message");
             if (timestamp == null || app == null || message == null)
                 return new LogLine(false, Instant.MIN, null, null);
-            String query = queryOf(message.asText(""));
+            String query = null;
+            try {
+                query = queryOf(mappingScript, timestamp.asText(), app.asText(), message.asText());
+            } catch (Exception exception) {
+                return new LogLine(false, Instant.MIN, null, null);
+            }
             if (query == null)
                 return new LogLine(false, Instant.MIN, null, null);
             Instant instant = parseTimeStamp(timestamp.asText(""));
@@ -194,11 +202,16 @@ public final class LogLine implements Comparable<LogLine> {
      * <p>
      * </ul>
      *
+     * @param timestamp timestamp
+     * @param app from application name
      * @param message from log
      * @return query string or null if not a valid query, with trackingId
      *         removed, and perftest-flag set
      */
-    private static String queryOf(String message) {
+    private static String queryOf(Environment mappingScript, String timestamp, String app, String message) throws Exception {
+        Object[] args = new Object[]  { timestamp, app, message };
+        String output = (String) mappingScript.callMethod(SCRIPT_METHOD, args);
+        log.debug("Message {}. JS result {}", message, output);
         try {
             Map<String, String> parts = Arrays.stream(message.split("\\s+"))
                     .filter(s -> s.contains("="))

@@ -27,6 +27,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Predicate;
 
+import dk.dbc.jslib.Environment;
 /**
  *
  * @author Morten Bøgeskov (mb@dbc.dk)
@@ -36,17 +37,19 @@ public class Recorder {
     private static final Logger log = LoggerFactory.getLogger(Recorder.class);
 
     private final Config config;
-    private final String scriptFile = null;
+    Environment environment;
 
-    public Recorder(Config config) {
+    public Recorder(Config config) throws Exception {
         this.config = config;
+        environment = new Environment();
+        environment.evalFile(config.getJavascript());
     }
 
     public void run() {
         try (OutputWriter outputWriter = getOutputWriter()) {
             try (LineSource lineSource = getLineSource()) {
                 lineSource.stream()
-                        .map(s -> LogLine.mappingScript(s, scriptFile))
+                        .map(s -> LogLine.mappingScript(s, environment))
                         .filter(LogLine::isValid)
                         .filter(applicationFilter())
                         .forEach(outputWriter);

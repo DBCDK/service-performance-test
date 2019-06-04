@@ -20,5 +20,9 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
         </dependency>
+        <dependency>
+            <groupId>dk.dbc</groupId>
+            <artifactId>dbc-jslib</artifactId>
+        </dependency>
     </dependencies>
 </project>

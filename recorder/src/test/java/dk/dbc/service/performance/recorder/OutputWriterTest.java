@@ -18,6 +18,7 @@
  */
 package dk.dbc.service.performance.recorder;
 
+import dk.dbc.jslib.Environment;
 import dk.dbc.service.performance.LineSource;
 import dk.dbc.service.performance.LinesInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,7 +37,16 @@ import static org.junit.Assert.*;
  */
 public class OutputWriterTest {
 
-    private final static String scriptFile = new String("");
+    private static final Environment MOCK_ENVIRONMENT;
+    static {
+        try {
+            MOCK_ENVIRONMENT = new Environment();
+            MOCK_ENVIRONMENT.eval( "var " + LogLine.SCRIPT_METHOD + " = function() { return '' }" );
+        } catch (Exception ex) {
+            throw new Error();
+        }
+    }
+
     @Test(timeout = 2_000L)
     public void testEof() throws Exception {
         System.out.println("testEof");
@@ -47,10 +57,11 @@ public class OutputWriterTest {
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()
-                    .map(s -> LogLine.mappingScript(s, scriptFile))
+                    .map(s -> LogLine.mappingScript(s, MOCK_ENVIRONMENT))
                     .filter(LogLine::isValid)
                     .forEach(outputWriter);
         }
+
         String content = new String(bos.toByteArray(), UTF_8);
         String[] array = content.split("\n");
         System.out.println("array.length = " + array.length);
@@ -68,7 +79,7 @@ public class OutputWriterTest {
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()
-                    .map(s -> LogLine.mappingScript(s, scriptFile))
+                    .map(s -> LogLine.mappingScript(s, MOCK_ENVIRONMENT))
                     .filter(LogLine::isValid)
                     .forEach(outputWriter);
         } catch (CompletedException ex) {
@@ -92,7 +103,7 @@ public class OutputWriterTest {
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()
-                    .map(s -> LogLine.mappingScript(s, scriptFile))
+                    .map(s -> LogLine.mappingScript(s, MOCK_ENVIRONMENT))
                     .filter(LogLine::isValid)
                     .forEach(outputWriter);
         } catch (CompletedException ex) {
