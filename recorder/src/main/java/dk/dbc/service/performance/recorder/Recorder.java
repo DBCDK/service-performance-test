@@ -36,6 +36,7 @@ public class Recorder {
     private static final Logger log = LoggerFactory.getLogger(Recorder.class);
 
     private final Config config;
+    private final String scriptFile = null;
 
     public Recorder(Config config) {
         this.config = config;
@@ -45,7 +46,7 @@ public class Recorder {
         try (OutputWriter outputWriter = getOutputWriter()) {
             try (LineSource lineSource = getLineSource()) {
                 lineSource.stream()
-                        .map(LogLine::of)
+                        .map(s -> LogLine.mappingScript(s, scriptFile))
                         .filter(LogLine::isValid)
                         .filter(applicationFilter())
                         .forEach(outputWriter);

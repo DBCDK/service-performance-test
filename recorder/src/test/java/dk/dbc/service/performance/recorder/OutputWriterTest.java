@@ -36,6 +36,7 @@ import static org.junit.Assert.*;
  */
 public class OutputWriterTest {
 
+    private final static String scriptFile = new String("");
     @Test(timeout = 2_000L)
     public void testEof() throws Exception {
         System.out.println("testEof");
@@ -46,7 +47,7 @@ public class OutputWriterTest {
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()
-                    .map(LogLine::of)
+                    .map(s -> LogLine.mappingScript(s, scriptFile))
                     .filter(LogLine::isValid)
                     .forEach(outputWriter);
         }
@@ -67,7 +68,7 @@ public class OutputWriterTest {
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()
-                    .map(LogLine::of)
+                    .map(s -> LogLine.mappingScript(s, scriptFile))
                     .filter(LogLine::isValid)
                     .forEach(outputWriter);
         } catch (CompletedException ex) {
@@ -91,7 +92,7 @@ public class OutputWriterTest {
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()
-                    .map(LogLine::of)
+                    .map(s -> LogLine.mappingScript(s, scriptFile))
                     .filter(LogLine::isValid)
                     .forEach(outputWriter);
         } catch (CompletedException ex) {

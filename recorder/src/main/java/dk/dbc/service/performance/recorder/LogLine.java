@@ -56,9 +56,11 @@ public final class LogLine implements Comparable<LogLine> {
      * Convert a log line into an object
      *
      * @param text log line
+     * @param mappingScript script to use mapping
      * @return LogLine object
      */
-    public static LogLine of(String text) {
+    // @TODO: use external mappingScript to identifiy lines to be recorded
+    public static LogLine mappingScript(String text, String mappingScript) {
         try {
             JsonNode obj = O.readTree(text);
             JsonNode timestamp = obj.get("timestamp");
