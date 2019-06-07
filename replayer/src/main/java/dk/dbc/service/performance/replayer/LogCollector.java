@@ -27,10 +27,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -114,12 +111,14 @@ public class LogCollector {
         Map status = new HashMap();
         status.put( "code", this.statusCode);
         status.put("message", this.statusMessage);
+        LongSummaryStatistics stat = calulateStats();
 
         BufferedWriter w = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
         Map output = new HashMap();
         output.put("configuration", conf);
         output.put("loglines", log);
-        output.put("statistics", counterMap);
+        output.put("counter", counterMap);
+        output.put("callStat", stat);
         output.put("status", status);
 
         ObjectMapper mapper = new ObjectMapper();
@@ -129,6 +128,14 @@ public class LogCollector {
 
     public static LogEntry newEntry() {
         return new LogEntry();
+    }
+
+    public LongSummaryStatistics calulateStats() {
+        LongSummaryStatistics stat = log
+                .stream()
+                .mapToLong(le -> le.getCallDuration())
+                .summaryStatistics();
+        return stat;
     }
 
     public static class LogEntry {
