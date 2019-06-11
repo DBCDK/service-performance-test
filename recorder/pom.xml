@@ -24,5 +24,10 @@
             <groupId>dk.dbc</groupId>
             <artifactId>dbc-jslib</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>jscommon</artifactId>
+            <version>2012.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

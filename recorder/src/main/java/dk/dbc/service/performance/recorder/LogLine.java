@@ -25,10 +25,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import jdk.nashorn.internal.runtime.Undefined;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +60,6 @@ public final class LogLine implements Comparable<LogLine> {
      * @param mappingScript script to use mapping
      * @return LogLine object
      */
-    // @TODO: use external mappingScript to identifiy lines to be recorded
     public static LogLine mappingScript(String text, Environment mappingScript) {
         try {
             JsonNode obj = O.readTree(text);
@@ -210,32 +207,14 @@ public final class LogLine implements Comparable<LogLine> {
      */
     private static String queryOf(Environment mappingScript, String timestamp, String app, String message) throws Exception {
         Object[] args = new Object[]  { timestamp, app, message };
-        String output = (String) mappingScript.callMethod(SCRIPT_METHOD, args);
+
+        Object output = mappingScript.callMethod(SCRIPT_METHOD, args);
         log.debug("Message {}. JS result {}", message, output);
-        try {
-            Map<String, String> parts = Arrays.stream(message.split("\\s+"))
-                    .filter(s -> s.contains("="))
-                    .map(s -> s.split("=", 2))
-                    .collect(Collectors.toMap(a -> a[0], a -> a[1]));
 
-            String path = parts.getOrDefault("path", "");
-            if (path == null || !path.equals("/select"))
-                return null;
-
-            String params = parts.get("params");
-            if (params == null || params.isEmpty())
-                return null;
-
-            String queryString = params.substring(1, params.length() - 1);
-
-            String queryStringMatcher = "&" + queryString + "&";
-            if (queryStringMatcher.contains("&distrib=false&") ||
-                queryStringMatcher.contains("&" + PERFTEST_FLAG + "&"))
-                return null;
-
-            return ( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&");
-        } catch (RuntimeException e) {
+        if (output instanceof Undefined) {
             return null;
+        } else {
+            return (String)output;
         }
     }
 }

@@ -23,6 +23,7 @@ import dk.dbc.service.performance.LineSource;
 import dk.dbc.service.performance.LinesInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 
 import org.junit.Test;
@@ -37,13 +38,16 @@ import static org.junit.Assert.*;
  */
 public class OutputWriterTest {
 
-    private static final Environment MOCK_ENVIRONMENT;
-    static {
+    private final Environment MOCK_ENVIRONMENT;
+    public OutputWriterTest() {
         try {
             MOCK_ENVIRONMENT = new Environment();
-            MOCK_ENVIRONMENT.eval( "var " + LogLine.SCRIPT_METHOD + " = function() { return '' }" );
+            Recorder.createModuleHandler(MOCK_ENVIRONMENT);
+            final String testjs = "test.js";
+            InputStream js = getClass().getClassLoader().getResourceAsStream(testjs);
+            MOCK_ENVIRONMENT.eval(new InputStreamReader(js), testjs);
         } catch (Exception ex) {
-            throw new Error();
+            throw new Error(ex);
         }
     }
 
