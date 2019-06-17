@@ -20,6 +20,7 @@ package dk.dbc.service.performance.recorder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 import dk.dbc.jslib.Environment;
 import java.io.IOException;
 import java.time.Duration;
@@ -66,11 +67,15 @@ public final class LogLine implements Comparable<LogLine> {
             JsonNode timestamp = obj.get("timestamp");
             JsonNode app = obj.get("app");
             JsonNode message = obj.get("message");
-            if (timestamp == null || app == null || message == null)
+            JsonNode mdc = obj.get("mdc");
+            String appString = (app != null) ? app.asText() : "";
+            String mdcString = (mdc != null) ? mdc.toString() : "";
+            log.debug("Line: mdc: '{}', mdcString: '{}'", mdc, mdcString);
+            if (timestamp == null || message == null)
                 return new LogLine(false, Instant.MIN, null, null);
             String query = null;
             try {
-                query = queryOf(mappingScript, timestamp.asText(), app.asText(), message.asText());
+                query = queryOf(mappingScript, timestamp.asText(), appString, message.asText(), mdcString);
             } catch (Exception exception) {
                 return new LogLine(false, Instant.MIN, null, null);
             }
@@ -78,7 +83,7 @@ public final class LogLine implements Comparable<LogLine> {
                 return new LogLine(false, Instant.MIN, null, null);
             Instant instant = parseTimeStamp(timestamp.asText(""));
 
-            return new LogLine(true, instant, app.asText(""), query);
+            return new LogLine(true, instant, appString, query);
         } catch (IOException ex) {
             log.debug("Error parsing JSON log line: ", ex);
             return new LogLine(false, Instant.MIN, null, null);
@@ -205,8 +210,8 @@ public final class LogLine implements Comparable<LogLine> {
      * @return query string or null if not a valid query, with trackingId
      *         removed, and perftest-flag set
      */
-    private static String queryOf(Environment mappingScript, String timestamp, String app, String message) throws Exception {
-        Object[] args = new Object[]  { timestamp, app, message };
+    private static String queryOf(Environment mappingScript, String timestamp, String app, String message, String mdc) throws Exception {
+        Object[] args = new Object[]  { timestamp, app, message, mdc};
 
         Object output = mappingScript.callMethod(SCRIPT_METHOD, args);
         log.debug("Message {}. JS result {}", message, output);
