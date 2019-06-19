@@ -44,7 +44,12 @@ var lineFilter =  function (timestamp, app, message) {
         return undefined;
     }
 
-    result = ( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&");
+    if( queryString.indexOf("child+of") !== -1 ) {
+        result = ( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&");
+    }
+    else {
+        result = encodeURI(( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&"));
+    }
     Log.debug( "lineFilter. result:", result);
     return result;
 };

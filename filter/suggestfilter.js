@@ -33,7 +33,7 @@ var lineFilter =  function (timestamp, app, message, mdc) {
     Log.debug( "lineFilter. query:", query);
 
     // Base request for suggest & search
-    result = "/" + requestType + "?query=" + query
+    result = "/" + requestType + "?query=" + encodeURI(query)
     switch ( requestType ) {
         case "suggest":
             // mdc:{"requestType":"suggest","query":"kjærs","collection":"suggest-all"}

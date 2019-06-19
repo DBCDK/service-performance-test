@@ -45,6 +45,7 @@ public class LogCollectorTest {
         for( long duration : callDurations) {
             LogCollector.LogEntry logEntry = LogCollector.newEntry();
             logEntry.setCallDuration(duration);
+            logEntry.setQuery( "a-query: duration=" + duration);
             collector.addEntry(logEntry);
         }
     }
