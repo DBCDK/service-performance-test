@@ -70,6 +70,7 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: '*/target/*.jar', fingerprint: true
+            archiveArtifacts artifacts: 'filter/*.js', fingerprint: true
         }
     }
 }
