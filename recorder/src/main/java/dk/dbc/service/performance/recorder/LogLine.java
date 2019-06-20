@@ -20,7 +20,6 @@ package dk.dbc.service.performance.recorder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.TextNode;
 import dk.dbc.jslib.Environment;
 import java.io.IOException;
 import java.time.Duration;
@@ -44,8 +43,6 @@ public final class LogLine implements Comparable<LogLine> {
     private static final Logger log = LoggerFactory.getLogger(LogLine.class);
 
     private static final ObjectMapper O = new ObjectMapper();
-
-    private static final String PERFTEST_FLAG = "dbcPerfTest=true";
 
     public static final String SCRIPT_METHOD = "lineFilter";
 

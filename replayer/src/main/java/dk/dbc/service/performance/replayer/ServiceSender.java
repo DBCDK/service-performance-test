@@ -51,6 +51,7 @@ public class ServiceSender {
     /**
      * Send a query to the service and capture information about the request
      * @param logLine a Line from the recorded log
+     * @param logEntry log-Entry object to store results in
      * @return Duration of the service call in ms
      */
     public long send(LogLine logLine, LogCollector.LogEntry logEntry ) {

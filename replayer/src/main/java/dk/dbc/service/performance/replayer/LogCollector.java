@@ -133,7 +133,7 @@ public class LogCollector {
     public LongSummaryStatistics calulateStats() {
         LongSummaryStatistics stat = log
                 .stream()
-                .filter(le -> (! le.getQuery().isEmpty()))
+                .filter(le -> ! le.getQuery().isEmpty())
                 .mapToLong(le -> le.getCallDuration())
                 .summaryStatistics();
         return stat;
