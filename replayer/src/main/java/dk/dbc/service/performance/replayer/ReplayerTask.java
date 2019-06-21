@@ -34,19 +34,21 @@ public class ReplayerTask implements Runnable{
     private LogLine logLine;
     private CallTimeWathcer watcher;
     private JobListener jobListener;
+    private LogCollector.LogEntry logEntry;
 
-    public ReplayerTask(Config config, LogCollector logCollector, CallTimeWathcer watcher, LogLine logLine, JobListener jobListener) {
+    public ReplayerTask(Config config, LogCollector logCollector, CallTimeWathcer watcher, LogLine logLine, JobListener jobListener, LogCollector.LogEntry logEntry) {
         this.watcher = watcher;
 
         this.sender = new ServiceSender(config.getService(), logCollector);
         this.logLine = logLine;
         this.jobListener = jobListener;
+        this.logEntry = logEntry;
     }
 
     @Override
     public void run() {
         log.debug( "Running: logLine=" + logLine);
-        long duration = sender.send(logLine);
+        long duration = sender.send(logLine, logEntry);
         try {
             watcher.addCallTime(duration); // Can throw CallTimeExceededException
         } catch (CallTimeExceededException ex ) {

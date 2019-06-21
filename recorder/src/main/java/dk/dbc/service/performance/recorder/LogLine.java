@@ -20,14 +20,13 @@ package dk.dbc.service.performance.recorder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dk.dbc.jslib.Environment;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import jdk.nashorn.internal.runtime.Undefined;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +44,7 @@ public final class LogLine implements Comparable<LogLine> {
 
     private static final ObjectMapper O = new ObjectMapper();
 
-    private static final String PERFTEST_FLAG = "dbcPerfTest=true";
+    public static final String SCRIPT_METHOD = "lineFilter";
 
     private final boolean valid;
     private final Instant instant;
@@ -56,22 +55,32 @@ public final class LogLine implements Comparable<LogLine> {
      * Convert a log line into an object
      *
      * @param text log line
+     * @param mappingScript script to use mapping
      * @return LogLine object
      */
-    public static LogLine of(String text) {
+    public static LogLine mappingScript(String text, Environment mappingScript) {
         try {
             JsonNode obj = O.readTree(text);
             JsonNode timestamp = obj.get("timestamp");
             JsonNode app = obj.get("app");
             JsonNode message = obj.get("message");
-            if (timestamp == null || app == null || message == null)
+            JsonNode mdc = obj.get("mdc");
+            String appString = (app != null) ? app.asText() : "";
+            String mdcString = (mdc != null) ? mdc.toString() : "";
+            log.debug("Line: mdc: '{}', mdcString: '{}'", mdc, mdcString);
+            if (timestamp == null || message == null)
                 return new LogLine(false, Instant.MIN, null, null);
-            String query = queryOf(message.asText(""));
+            String query = null;
+            try {
+                query = queryOf(mappingScript, timestamp.asText(), appString, message.asText(), mdcString);
+            } catch (Exception exception) {
+                return new LogLine(false, Instant.MIN, null, null);
+            }
             if (query == null)
                 return new LogLine(false, Instant.MIN, null, null);
             Instant instant = parseTimeStamp(timestamp.asText(""));
 
-            return new LogLine(true, instant, app.asText(""), query);
+            return new LogLine(true, instant, appString, query);
         } catch (IOException ex) {
             log.debug("Error parsing JSON log line: ", ex);
             return new LogLine(false, Instant.MIN, null, null);
@@ -192,35 +201,22 @@ public final class LogLine implements Comparable<LogLine> {
      * <p>
      * </ul>
      *
+     * @param timestamp timestamp
+     * @param app from application name
      * @param message from log
      * @return query string or null if not a valid query, with trackingId
      *         removed, and perftest-flag set
      */
-    private static String queryOf(String message) {
-        try {
-            Map<String, String> parts = Arrays.stream(message.split("\\s+"))
-                    .filter(s -> s.contains("="))
-                    .map(s -> s.split("=", 2))
-                    .collect(Collectors.toMap(a -> a[0], a -> a[1]));
+    private static String queryOf(Environment mappingScript, String timestamp, String app, String message, String mdc) throws Exception {
+        Object[] args = new Object[]  { timestamp, app, message, mdc};
 
-            String path = parts.getOrDefault("path", "");
-            if (path == null || !path.equals("/select"))
-                return null;
+        Object output = mappingScript.callMethod(SCRIPT_METHOD, args);
+        log.debug("Message {}. JS result {}", message, output);
 
-            String params = parts.get("params");
-            if (params == null || params.isEmpty())
-                return null;
-
-            String queryString = params.substring(1, params.length() - 1);
-
-            String queryStringMatcher = "&" + queryString + "&";
-            if (queryStringMatcher.contains("&distrib=false&") ||
-                queryStringMatcher.contains("&" + PERFTEST_FLAG + "&"))
-                return null;
-
-            return ( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&");
-        } catch (RuntimeException e) {
+        if (output instanceof Undefined) {
             return null;
+        } else {
+            return (String)output;
         }
     }
 }

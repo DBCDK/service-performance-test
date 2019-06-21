@@ -18,6 +18,11 @@
  */
 package dk.dbc.service.performance.recorder;
 
+import dk.dbc.jslib.Environment;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.*;
@@ -33,11 +38,24 @@ public class LogLineTest {
     private static final String DISTRIB_LINE = "{\"timestamp\":\"2019-03-13T09:33:14.556+00:00\",\"version\":\"1\",\"message\":\"[REDACTED]  webapp=/solr path=/select params={df=term.default&distrib=false&_stateVer_=REDACTED&debug=false&fl=REDACTED&fl=REDACTED&shards.purpose=68&start=0&fsv=true&q.op=AND&shard.url=http://REDACTED&rows=10000&version=2&q=REDACTED&NOW=1552469594555&isShard=true&wt=javabin} hits=0 status=0 QTime=0\",\"logger\":\"org.apache.solr.core.SolrCore.Request\",\"thread\":\"qtp210506412-1411563\",\"level\":\"INFO\",\"level_value\":20000,\"mdc\":{\"node_name\":\"n:REDACTED\",\"core\":\"x:REDACTED\",\"collection\":\"c:REDACTED\",\"shard\":\"s:shard10\",\"replica\":\"r:REDACTED\"},\"app\":\"solr7\"}";
     private static final String JVM_LINE = "{\"timestamp\":\"2019-03-13T09:33:14.522+00:00\",\"version\":\"1\",\"message\":\"[MP][qtp210506412-1172747]:   seg=_j6r(7.6.0):C12777/6360 size=2.047 MB\",\"logger\":\"org.apache.solr.update.LoggingInfoStream\",\"thread\":\"qtp210506412-1172747\",\"level\":\"INFO\",\"level_value\":20000,\"mdc\":{\"node_name\":\"n:REDACTED\",\"core\":\"x:REDACTED\",\"collection\":\"c:REDACTED\",\"shard\":\"s:shard5\",\"replica\":\"r:REDACTED\"},\"app\":\"solr7\"}";
     private static final String UPDATE_LINE = "{\"timestamp\":\"2019-03-13T09:33:14.535+00:00\",\"version\":\"1\",\"message\":\"[REDACTED]  webapp=/solr path=/update params={update.distrib=FROMLEADER&update.chain=timestamp&distrib.from=http://REDACTED&wt=javabin&version=2}{add=[51086821/32!870970-basis-51086821 (1627882357458468864)]} 0 60\",\"logger\":\"org.apache.solr.update.processor.LogUpdateProcessorFactory\",\"thread\":\"qtp210506412-1100619\",\"level\":\"INFO\",\"level_value\":20000,\"mdc\":{\"node_name\":\"n:REDACTED\",\"core\":\"x:REDACTED\",\"collection\":\"c:REDACTED\",\"shard\":\"s:shard4\",\"replica\":\"r:REDACTED\"},\"app\":\"solr7\"}";
+    
+    private final Environment MOCK_ENVIRONMENT;
+    public LogLineTest() {
+        try {
+            MOCK_ENVIRONMENT = new Environment();
+            Recorder.createModuleHandler(MOCK_ENVIRONMENT);
+            final String testjs = "test.js";
+            InputStream js = getClass().getClassLoader().getResourceAsStream(testjs);
+            MOCK_ENVIRONMENT.eval(new InputStreamReader(js), testjs);
+        } catch (Exception ex) {
+            throw new Error(ex);
+        }
+    }
 
     @Test(timeout = 2_000L)
     public void testDistrib() throws Exception {
         System.out.println("testDistrib");
-        LogLine logLine = LogLine.of(DISTRIB_LINE);
+        LogLine logLine = LogLine.mappingScript(DISTRIB_LINE, MOCK_ENVIRONMENT);
         assertThat(logLine.isValid(), is(false));
     }
 
@@ -46,7 +64,7 @@ public class LogLineTest {
         System.out.println("testStripTrackingId");
 
         assertThat(OK_LINE, containsString("trackingId=REDACTED"));
-        LogLine logLine = LogLine.of(OK_LINE);
+        LogLine logLine = LogLine.mappingScript(OK_LINE, MOCK_ENVIRONMENT);
         assertThat(logLine.isValid(), is(true));
         assertThat(logLine.getQuery(), not(containsString("trackingId=REDACTED")));
     }
@@ -56,7 +74,7 @@ public class LogLineTest {
         System.out.println("testAddMarker");
 
         assertThat(OK_LINE, not(containsString("dbcPerfTest")));
-        LogLine logLine = LogLine.of(OK_LINE);
+        LogLine logLine = LogLine.mappingScript(OK_LINE, MOCK_ENVIRONMENT);
         assertThat(logLine.isValid(), is(true));
         assertThat(logLine.getQuery(), containsString("dbcPerfTest=true"));
     }
@@ -64,21 +82,21 @@ public class LogLineTest {
     @Test(timeout = 2_000L)
     public void testNotRequest() throws Exception {
         System.out.println("testNotRequest");
-        LogLine logLine = LogLine.of(JVM_LINE);
+        LogLine logLine = LogLine.mappingScript(JVM_LINE, MOCK_ENVIRONMENT);
         assertThat(logLine.isValid(), is(false));
     }
 
     @Test(timeout = 2_000L)
     public void testNotSelect() throws Exception {
         System.out.println("testNotSelect");
-        LogLine logLine = LogLine.of(UPDATE_LINE);
+        LogLine logLine = LogLine.mappingScript(UPDATE_LINE, MOCK_ENVIRONMENT);
         assertThat(logLine.isValid(), is(false));
     }
 
     @Test(timeout = 2_000L)
     public void testAppName() throws Exception {
         System.out.println("testAppName");
-        LogLine logLine = LogLine.of(OK_LINE);
+        LogLine logLine = LogLine.mappingScript(OK_LINE, MOCK_ENVIRONMENT);
         assertThat(logLine.getApp(), is("solr7"));
     }
 }

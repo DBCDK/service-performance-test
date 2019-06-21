@@ -44,26 +44,25 @@ public class ServiceSender {
      * @param collector A Log-collector
      */
     public ServiceSender(String baseUrl, LogCollector collector) {
-        this.baseUrl = baseUrl + (baseUrl.endsWith("?") ? "" : "?");
+        this.baseUrl = baseUrl;
         this.logCollector = collector;
     }
 
     /**
      * Send a query to the service and capture information about the request
      * @param logLine a Line from the recorded log
+     * @param logEntry log-Entry object to store results in
      * @return Duration of the service call in ms
      */
-    public long send(LogLine logLine) {
+    public long send(LogLine logLine, LogCollector.LogEntry logEntry ) {
         log.trace( "LogLine = " + logLine);
-
-        LogCollector.LogEntry logEntry = new LogCollector.LogEntry();
 
         long callDuration = 0;
         final String q = logLine.getQuery();
         logEntry.setQuery(q);
 
         try {
-            URL url = new URL(baseUrl + q );
+            URL url = new URL(baseUrl + q);
             HttpURLConnection client = (HttpURLConnection) url.openConnection();
             client.setRequestMethod("GET");
 
@@ -75,8 +74,9 @@ public class ServiceSender {
 
             if (responseCode != 200) {
                 log.error( "Got non-200 status({}) from service on query: {}", responseCode, q);
-                logEntry.setStatus("Non-200 exit status from service(" + responseCode + ")");
             }
+
+            logEntry.setStatus(Integer.toString(responseCode));
         } catch (Exception e) {
             log.error("Exception from client caught ({}) on query: {}", e.getMessage() , q);
             logEntry.setStatus("Exception from http-client (" + e.getMessage() + ")");
@@ -85,7 +85,6 @@ public class ServiceSender {
         finally {
             callDuration = Timer.end();
             logEntry.setCallDuration(callDuration);
-            logCollector.addEntry(logEntry);
 
             log.info( "Call duration = {}ms", callDuration);
         }

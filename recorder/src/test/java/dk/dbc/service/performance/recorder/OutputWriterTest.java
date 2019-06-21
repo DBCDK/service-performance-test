@@ -18,10 +18,12 @@
  */
 package dk.dbc.service.performance.recorder;
 
+import dk.dbc.jslib.Environment;
 import dk.dbc.service.performance.LineSource;
 import dk.dbc.service.performance.LinesInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 
 import org.junit.Test;
@@ -36,6 +38,19 @@ import static org.junit.Assert.*;
  */
 public class OutputWriterTest {
 
+    private final Environment MOCK_ENVIRONMENT;
+    public OutputWriterTest() {
+        try {
+            MOCK_ENVIRONMENT = new Environment();
+            Recorder.createModuleHandler(MOCK_ENVIRONMENT);
+            final String testjs = "test.js";
+            InputStream js = getClass().getClassLoader().getResourceAsStream(testjs);
+            MOCK_ENVIRONMENT.eval(new InputStreamReader(js), testjs);
+        } catch (Exception ex) {
+            throw new Error(ex);
+        }
+    }
+
     @Test(timeout = 2_000L)
     public void testEof() throws Exception {
         System.out.println("testEof");
@@ -46,10 +61,11 @@ public class OutputWriterTest {
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()
-                    .map(LogLine::of)
+                    .map(s -> LogLine.mappingScript(s, MOCK_ENVIRONMENT))
                     .filter(LogLine::isValid)
                     .forEach(outputWriter);
         }
+
         String content = new String(bos.toByteArray(), UTF_8);
         String[] array = content.split("\n");
         System.out.println("array.length = " + array.length);
@@ -67,7 +83,7 @@ public class OutputWriterTest {
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()
-                    .map(LogLine::of)
+                    .map(s -> LogLine.mappingScript(s, MOCK_ENVIRONMENT))
                     .filter(LogLine::isValid)
                     .forEach(outputWriter);
         } catch (CompletedException ex) {
@@ -91,7 +107,7 @@ public class OutputWriterTest {
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()
-                    .map(LogLine::of)
+                    .map(s -> LogLine.mappingScript(s, MOCK_ENVIRONMENT))
                     .filter(LogLine::isValid)
                     .forEach(outputWriter);
         } catch (CompletedException ex) {

@@ -15,7 +15,7 @@ pipeline {
         pollSCM("H/3 * * * *")
     }
     options {
-        buildDiscarder(logRotator(artifactDaysToKeepStr: "", artifactNumToKeepStr: "", daysToKeepStr: "30", numToKeepStr: "30"))
+        buildDiscarder(logRotator(artifactDaysToKeepStr: "", artifactNumToKeepStr: "", numToKeepStr: "30"))
         timestamps()
     }
     stages {
@@ -70,6 +70,7 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: '*/target/*.jar', fingerprint: true
+            archiveArtifacts artifacts: 'filter/*.js', fingerprint: true
         }
     }
 }

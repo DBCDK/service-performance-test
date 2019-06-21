@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /** Replay the recorded queries against a service instance
  * and record execution time and result.
@@ -74,7 +75,6 @@ public class Replayer implements JobListener{
                 long numLines = 0;
                 while (br.ready()) {
                     LogCollector.LogEntry logEntry = LogCollector.newEntry();
-                    logCollector.addEntry(logEntry);
 
                     if(callTimeExceeded) {
                         runStatus.setStatus( Status.Code.CALLTIME_EXCEEDED, "CallTime exceeded (" + config.getCallTimeConstraint() + "ms)");
@@ -89,10 +89,12 @@ public class Replayer implements JobListener{
 
                     LogLine logLine = LogLine.of(br.readLine());
                     if (!logLine.isValid()) {
+                        log.error("Logline not valid logline=" + logLine);
                         continue;
                     }
 
-                    ReplayerTask task = new ReplayerTask(config, logCollector, wathcer, logLine, this);
+                    logCollector.addEntry(logEntry);
+                    ReplayerTask task = new ReplayerTask(config, logCollector, wathcer, logLine, this, logEntry);
                     executorService.execute(task);
 
                     long originalTimeDelta = logLine.getTimeDelta();
@@ -107,6 +109,7 @@ public class Replayer implements JobListener{
                     }
 
                     if(hasExceededDuration(timeStarted)) {
+                        log.info("Runtime exceeded - Aborting!");
                         runStatus.setStatus( Status.Code.RUNTIME_EXCEEDED, "Runtime exceeded (" + config.getDurationConstraint() + "ms)" );
                         break;
                     }
@@ -125,9 +128,12 @@ public class Replayer implements JobListener{
 
         try {
             executorService.shutdown();
+            executorService.awaitTermination(5L, TimeUnit.SECONDS);
             logCollector.addRunStatus(runStatus.getCode(), runStatus.getMessage());
             logCollector.dump(getDestination(config.getOutput()));
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 

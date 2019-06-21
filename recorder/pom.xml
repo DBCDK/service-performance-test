@@ -3,11 +3,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>dk.dbc</groupId>
-        <artifactId>service-performance-test</artifactId>
+        <artifactId>performance-test</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>service-performance-test-recorder</artifactId>
+    <artifactId>performance-test-recorder</artifactId>
     <packaging>jar</packaging>
     
     <dependencies>
@@ -19,6 +19,15 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dk.dbc</groupId>
+            <artifactId>dbc-jslib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>jscommon</artifactId>
+            <version>2012.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

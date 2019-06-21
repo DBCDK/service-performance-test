@@ -193,6 +193,7 @@ public class Arguments {
     private static void verbose() {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.getLogger("dk.dbc").setLevel(Level.DEBUG);
+        context.getLogger("JavaScript.Logger").setLevel(Level.DEBUG);
     }
 
     private static String executable() {

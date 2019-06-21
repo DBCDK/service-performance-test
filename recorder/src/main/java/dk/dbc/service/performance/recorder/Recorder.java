@@ -18,6 +18,7 @@
  */
 package dk.dbc.service.performance.recorder;
 
+import dk.dbc.jslib.ClasspathSchemeHandler;
 import dk.dbc.service.performance.LineSource;
 import dk.dbc.service.performance.LinesInputStream;
 import org.slf4j.Logger;
@@ -27,6 +28,9 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Predicate;
 
+import dk.dbc.jslib.Environment;
+import dk.dbc.jslib.ModuleHandler;
+import dk.dbc.jslib.SchemeURI;
 /**
  *
  * @author Morten Bøgeskov (mb@dbc.dk)
@@ -36,16 +40,39 @@ public class Recorder {
     private static final Logger log = LoggerFactory.getLogger(Recorder.class);
 
     private final Config config;
-
-    public Recorder(Config config) {
+    private final Environment environment;
+    static String [] moduleSearchPaths = {
+        "classpath:javascript/",
+        "classpath:javascript/javacore/",
+        "classpath:javascript/jscommon/devel/",
+        "classpath:javascript/jscommon/external/",
+        "classpath:javascript/jscommon/system/",
+        "classpath:javascript/jscommon/util/"
+    };
+    
+            
+    public Recorder(Config config) throws Exception {
         this.config = config;
+        environment = new Environment();
+        createModuleHandler(environment);
+        environment.evalFile(config.getJavascript());
+    }
+
+    static void createModuleHandler(Environment environment) {
+        ModuleHandler moduleHandler = new ModuleHandler();
+        ClasspathSchemeHandler csh = new ClasspathSchemeHandler();
+        moduleHandler.registerHandler("classpath", csh);
+        for (String searchPath : moduleSearchPaths) {
+            moduleHandler.addSearchPath(new SchemeURI(searchPath));
+        }
+        environment.registerUseFunction(moduleHandler);
     }
 
     public void run() {
         try (OutputWriter outputWriter = getOutputWriter()) {
             try (LineSource lineSource = getLineSource()) {
                 lineSource.stream()
-                        .map(LogLine::of)
+                        .map(s -> LogLine.mappingScript(s, environment))
                         .filter(LogLine::isValid)
                         .filter(applicationFilter())
                         .forEach(outputWriter);

@@ -90,6 +90,13 @@ public final class Config {
                 .desc("name of application in log")
                 .build());
 
+        options.addOption(Option.builder("j")
+                .longOpt("javascript")
+                .hasArg()
+                .argName("NAME")
+                .desc("Javascript")
+                .build());
+
         options.addOption(Option.builder("A")
                 .longOpt("append")
                 .desc("if output is given, append or overwrite")
@@ -113,6 +120,7 @@ public final class Config {
     private final String input;
     private final String output;
     private final String application;
+    private final String javascript;
     private boolean append;
 
     /**
@@ -151,6 +159,10 @@ public final class Config {
 
     public String getApplication() {
         return application;
+    }
+
+    public String getJavascript() {
+        return javascript;
     }
 
     public boolean isAppend() {
@@ -210,6 +222,7 @@ public final class Config {
                            return value;
                        });
         this.application = args.take("a", null, t -> t);
+        this.javascript = args.take("j", null, t -> t);
     }
 
     private static int countNotNull(Object... objs) {
