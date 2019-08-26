@@ -33,11 +33,17 @@ public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
-        Config config = Config.of(args);
-        log.info("start");
-        int exitcode = new Replayer(config).run();
-        log.info("end");
+        try {
+            Config config = Config.of(args);
+            log.info("start");
+            int exitcode = new Replayer(config).run();
+            log.info("end");
 
-        System.exit(exitcode);
+            System.exit(exitcode);
+        } catch (ExitException e) {
+            log.debug( "Exit!!");
+
+            System.exit(e.getCode());
+        }
     }
 }

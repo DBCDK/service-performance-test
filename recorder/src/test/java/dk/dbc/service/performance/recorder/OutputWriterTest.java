@@ -56,7 +56,7 @@ public class OutputWriterTest {
         System.out.println("testEof");
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (OutputWriter outputWriter = new OutputWriter(bos, 1500, Long.MAX_VALUE, Long.MAX_VALUE, OutputWriterTest::firstLine);
+        try (OutputWriter outputWriter = new OutputWriter(bos, 1500, Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE, OutputWriterTest::firstLine);
              InputStream is = getClass().getClassLoader().getResourceAsStream("log.data");
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
@@ -78,8 +78,8 @@ public class OutputWriterTest {
         System.out.println("testDuration");
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (OutputWriter outputWriter = new OutputWriter(bos, 1500, 1_500L, Long.MAX_VALUE, OutputWriterTest::firstLine) ;
-             InputStream is = getClass().getClassLoader().getResourceAsStream("log.data") ;
+        try (OutputWriter outputWriter = new OutputWriter(bos, 1500, 1_500L, Long.MAX_VALUE, Long.MAX_VALUE, OutputWriterTest::firstLine);
+             InputStream is = getClass().getClassLoader().getResourceAsStream("log.data");
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()
@@ -97,13 +97,43 @@ public class OutputWriterTest {
         assertThat(content, startsWith("0 ")); // Ensure timing is right
     }
 
+    @Test(timeout = 10_000L, expected = CompletedException.class)
+    public void testRunDuration() throws Exception {
+        System.out.println("testRunDuration");
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (OutputWriter outputWriter = new OutputWriter(bos, 1500, 1_500L, 1000L, Long.MAX_VALUE, OutputWriterTest::firstLine);
+             InputStream is = getClass().getClassLoader().getResourceAsStream("log.data");
+             LineSource lineSource = new LinesInputStream(is, UTF_8)) {
+
+            lineSource.stream()
+                    .map(s -> LogLine.mappingScript(s, MOCK_ENVIRONMENT))
+                    .filter(LogLine::isValid)
+                    .filter( t -> {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        return true;} )
+                    .forEach(outputWriter);
+        }
+        String content = new String(bos.toByteArray(), UTF_8);
+        System.out.println("content = " + content);
+        String[] array = content.split("\n");
+        System.out.println("array.length = " + array.length);
+        assertThat(array.length, lessThan(50));
+        assertThat(content, startsWith("0 ")); // Ensure timing is right
+    }
+
+
     @Test(timeout = 2_000L)
     public void testLines() throws Exception {
         System.out.println("testLines");
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (OutputWriter outputWriter = new OutputWriter(bos, 10, Long.MAX_VALUE, 25, OutputWriterTest::firstLine) ;
-             InputStream is = getClass().getClassLoader().getResourceAsStream("log.data") ;
+        try (OutputWriter outputWriter = new OutputWriter(bos, 10, Long.MAX_VALUE, Long.MAX_VALUE, 25, OutputWriterTest::firstLine);
+             InputStream is = getClass().getClassLoader().getResourceAsStream("log.data");
              LineSource lineSource = new LinesInputStream(is, UTF_8)) {
 
             lineSource.stream()

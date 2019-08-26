@@ -46,6 +46,7 @@ public class OutputWriter implements AutoCloseable, Consumer<LogLine> {
     private final OutputStream os;
     private final int orderBufferSize;
     private long duration;
+    private long runDuration;
     private final long limit;
     private final BiConsumer<OutputStream, LogLine> firstLineMetadata;
 
@@ -57,22 +58,22 @@ public class OutputWriter implements AutoCloseable, Consumer<LogLine> {
 
     /**
      * Construct a stream consumer
-     *
-     * @param os                Stream to put lines onto
+     *  @param os                Stream to put lines onto
      * @param orderBufferSize   how many lines should be buffered to mitigate
      *                          kafka out of order lines
-     * @param duration          how many ms to run for
+     * @param duration          how many ms to collect logs for
+     * @param runDuration       how many ms to run for
      * @param limit             how many lines to acquire
      * @param firstLineMetadata method that takes an output stream, and the
-     *                          first log line. To create headers in the output.
      */
-    public OutputWriter(OutputStream os, int orderBufferSize, long duration, long limit, BiConsumer<OutputStream, LogLine> firstLineMetadata) {
+    public OutputWriter(OutputStream os, int orderBufferSize, long duration, long runDuration, long limit, BiConsumer<OutputStream, LogLine> firstLineMetadata) {
         this.entries = new TreeSet<>();
         this.lastEntryTimeOffset = 0L;
         this.timeFirstDelta = null;
         this.os = os;
         this.orderBufferSize = orderBufferSize;
         this.duration = duration;
+        this.runDuration = runDuration;
         this.limit = limit;
         this.origin = null;
         this.firstLineMetadata = firstLineMetadata;
@@ -80,6 +81,7 @@ public class OutputWriter implements AutoCloseable, Consumer<LogLine> {
         this.completed = false;
         log.debug("orderBufferSize = {}", orderBufferSize);
         log.debug("duration = {}", duration);
+        log.debug("runDuration = {}", runDuration);
         log.debug("limit = {}", limit);
     }
 
@@ -88,6 +90,7 @@ public class OutputWriter implements AutoCloseable, Consumer<LogLine> {
         try {
             // If not completed, but source was drained output from cache
             log.debug("completed = {}", completed);
+            log.debug("Buffer.size=" + entries.size());
             if (!completed)
                 entries.forEach(this::outputEntry);
         } catch (CompletedException ex) {
@@ -121,6 +124,10 @@ public class OutputWriter implements AutoCloseable, Consumer<LogLine> {
             i.remove();
 
             outputEntry(entry);
+        }
+
+        if (currentOffset > runDuration) {
+            throw new CompletedException();
         }
     }
 
@@ -166,7 +173,7 @@ public class OutputWriter implements AutoCloseable, Consumer<LogLine> {
         private final LogLine logLine;
 
         private Entry(long timeOffset, LogLine logLine) {
-            this.timeOffset = timeOffset;
+            this.timeOffset = Math.max(timeOffset,0);
             this.logLine = logLine;
         }
 

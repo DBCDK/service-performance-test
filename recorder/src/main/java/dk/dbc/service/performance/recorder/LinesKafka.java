@@ -18,18 +18,15 @@
  */
 package dk.dbc.service.performance.recorder;
 
+import dk.dbc.ExitException;
 import dk.dbc.service.performance.LineSource;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.LongDeserializer;
+import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Implementation of {@link LineSource} from a kafka topic
@@ -55,12 +52,43 @@ public class LinesKafka extends LineSource {
         props.put(ConsumerConfig.GROUP_ID_CONFIG,
                   "SolrPerfTestRecorder");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-                  LongDeserializer.class.getName());
+                  StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
                   StringDeserializer.class.getName());
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,
+                  false);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
+                "latest");
         this.consumer = new KafkaConsumer<>(props);
         this.consumer.subscribe(Collections.singleton(parts[1]));
+        seekToEndOfTopic(this.consumer, parts[1]);
     }
+
+    /**
+     * Seek to the end (to newest entry) of the specified topic.
+     *
+     * Because there can be multiple partitions for a topic, we need
+     * to find every topic/partitionId pair first.
+     *
+     * @param kafka The kafka consumer
+     * @param topicName name of topic to seek to end for
+     */
+    private void seekToEndOfTopic( KafkaConsumer<Long, String>kafka, String topicName) {
+
+        // It is nessecary to do a "dummy call" to poll()
+        // before you can use seek()
+        ConsumerRecords<Long, String> records = kafka.poll(1000);
+        if(records != null) {
+            List<TopicPartition> tp = new ArrayList<TopicPartition>();
+            for (PartitionInfo pi : kafka.partitionsFor(topicName)) {
+                tp.add(new TopicPartition(topicName, pi.partition()));
+            }
+            kafka.seekToEnd(tp);
+        }
+        else
+            throw new ExitException(999);
+    }
+
 
     @Override
     protected String nextLine() throws IOException {

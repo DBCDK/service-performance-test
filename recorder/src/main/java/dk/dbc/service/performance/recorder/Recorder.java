@@ -31,6 +31,7 @@ import java.util.function.Predicate;
 import dk.dbc.jslib.Environment;
 import dk.dbc.jslib.ModuleHandler;
 import dk.dbc.jslib.SchemeURI;
+
 /**
  *
  * @author Morten Bøgeskov (mb@dbc.dk)
@@ -49,8 +50,7 @@ public class Recorder {
         "classpath:javascript/jscommon/system/",
         "classpath:javascript/jscommon/util/"
     };
-    
-            
+
     public Recorder(Config config) throws Exception {
         this.config = config;
         environment = new Environment();
@@ -103,6 +103,7 @@ public class Recorder {
         return new OutputWriter(os,
                                 config.getSortBufferSize(),
                                 config.getDuration(),
+                                config.getRunduration(),
                                 config.getLimit(),
                                 new HeaderOutput(config));
     }
@@ -126,5 +127,4 @@ public class Recorder {
             return new LinesInputStream(System.in, StandardCharsets.UTF_8);
         }
     }
-
 }

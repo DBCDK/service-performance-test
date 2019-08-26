@@ -36,7 +36,7 @@ var lineFilter =  function (timestamp, app, message) {
     }
 
     var queryString = params.substring(1, params.length - 1);
-    //Log.debug( "lineFilter. queryString:", queryString);
+    Log.debug( "lineFilter. queryString:", queryString);
 
     var queryStringMatcher = "&" + queryString + "&";
     if (queryStringMatcher.indexOf("&distrib=false&") > -1 ||

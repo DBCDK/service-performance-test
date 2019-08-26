@@ -140,12 +140,17 @@ public final class LogLine implements Comparable<LogLine> {
      * @return milliseconds
      */
     public long timeOffsetMS(Instant origin) {
+        long x = Duration.between(origin, instant).toMillis();
+        if(x<0)
+            log.debug(">>>> ALERT!! currentOffset er < 0 origin={}, instant={}", origin, instant);
         return Duration.between(origin, instant).toMillis();
     }
 
     @Override
     public int compareTo(LogLine t) {
-        return query.compareTo(t.query);
+        int ret = instant.compareTo(t.instant);
+        ret = ret != 0 ? ret : query.compareTo(t.query);
+        return ret;
     }
 
     @Override

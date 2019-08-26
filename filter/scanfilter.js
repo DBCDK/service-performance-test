@@ -4,6 +4,9 @@ var PERFTEST_FLAG = "dbcPerfTest=true";
 
 var lineFilter =  function (timestamp, app, message) {
     Log.trace( "Entering lineFilter. Timestamp:", timestamp, ", app:", app, ", message:", message );
+    Log.debug( "lineFilter. message:", message);
+    Log.debug( "lineFilter. timestamp:", timestamp);
+    Log.debug( "lineFilter. app:", app);
 
     var msg = message.split(/\s+/);
     var parts = {};
@@ -39,10 +42,10 @@ var lineFilter =  function (timestamp, app, message) {
     var queryString = params.substring(1, params.length - 1);
     Log.debug( "lineFilter. queryString:", queryString);
 
-    // We do not want queries sendt from agent datawell-scan-service
-    // They are scan requests and not regular searches
-    if (queryString.indexOf("agent=datawell-scan-service") !== -1 ) {
-        Log.debug( "lineFilter. Skipping agent: datawell-scan-service");
+    // We are only interested in queries sendt from agent datawell-scan-service
+    // These are scan requests.
+    if (queryString.indexOf("agent=datawell-scan-service") === -1 ) {
+        Log.debug( "lineFilter. Only use agent=datawell-scan-service");
         return undefined;
     }
 

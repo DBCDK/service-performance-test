@@ -40,7 +40,11 @@ public class Main {
             new Recorder(config).run();
             log.info("end");
         } catch (ExitException e) {
+            log.debug( "Exit!!");
+
             System.exit(e.getCode());
+        } catch( Exception e) {
+            log.error( "Main exception", e);
         }
     }
 
