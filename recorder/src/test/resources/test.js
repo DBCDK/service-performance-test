@@ -2,7 +2,13 @@ use( "Log" );
 
 var PERFTEST_FLAG = "dbcPerfTest=true";
 
-var lineFilter =  function (timestamp, app, message) {
+var lineFilter =  function (text) {
+    
+    var data = JSON.parse(text)
+    var timestamp = data.timestamp;
+    var app = data.app;
+    var message = data.message;
+    
     Log.trace( "Entering lineFilter. Timestamp:", timestamp, ", app:", app, ", message:", message );
 
     var msg = message.split(/\s+/);
@@ -44,12 +50,19 @@ var lineFilter =  function (timestamp, app, message) {
         return undefined;
     }
 
+    var query;
     if( queryString.indexOf("child+of") !== -1 ) {
-        result = ( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&");
+        query = ( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&");
     }
     else {
-        result = encodeURI(( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&"));
+        query = encodeURI(( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&"));
     }
     Log.debug( "lineFilter. result:", result);
+    var result = 
+    {
+        "timestamp": timestamp,
+        "app": app,
+        "query": query
+    };
     return result;
 };

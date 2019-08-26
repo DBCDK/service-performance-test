@@ -18,10 +18,8 @@
  */
 package dk.dbc.service.performance.recorder;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dk.dbc.jslib.Environment;
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -50,42 +48,6 @@ public final class LogLine implements Comparable<LogLine> {
     private final Instant instant;
     private final String app;
     private final String query;
-
-    /**
-     * Convert a log line into an object
-     *
-     * @param text log line
-     * @param mappingScript script to use mapping
-     * @return LogLine object
-     */
-    public static LogLine mappingScript(String text, Environment mappingScript) {
-        try {
-            JsonNode obj = O.readTree(text);
-            JsonNode timestamp = obj.get("timestamp");
-            JsonNode app = obj.get("app");
-            JsonNode message = obj.get("message");
-            JsonNode mdc = obj.get("mdc");
-            String appString = (app != null) ? app.asText() : "";
-            String mdcString = (mdc != null) ? mdc.toString() : "";
-            log.debug("Line: mdc: '{}', mdcString: '{}'", mdc, mdcString);
-            if (timestamp == null || message == null)
-                return new LogLine(false, Instant.MIN, null, null);
-            String query = null;
-            try {
-                query = queryOf(mappingScript, timestamp.asText(), appString, message.asText(), mdcString);
-            } catch (Exception exception) {
-                return new LogLine(false, Instant.MIN, null, null);
-            }
-            if (query == null)
-                return new LogLine(false, Instant.MIN, null, null);
-            Instant instant = parseTimeStamp(timestamp.asText(""));
-
-            return new LogLine(true, instant, appString, query);
-        } catch (IOException ex) {
-            log.debug("Error parsing JSON log line: ", ex);
-            return new LogLine(false, Instant.MIN, null, null);
-        }
-    }
 
     private LogLine(boolean valid, Instant instant, String app, String query) {
         this.valid = valid;
@@ -179,6 +141,28 @@ public final class LogLine implements Comparable<LogLine> {
     }
 
     /**
+     * Convert a log line into an object
+     *
+     * @param text log line
+     * @param mappingScript script to use mapping
+     * @return LogLine object
+     */
+    public static LogLine mappingScript(String text, Environment mappingScript) {
+        Output output;
+        try {
+            output = queryOfJS(mappingScript, text);
+        } catch (Exception exception) {
+            return new LogLine(false, Instant.MIN, null, null);
+        }
+        if (output == null || output.getTimestamp() == null || output.getQuery() == null)
+            return new LogLine(false, Instant.MIN, null, null);
+
+        Instant instant = parseTimeStamp(output.getTimestamp());
+
+        return new LogLine(true, instant, output.getApp(), output.getQuery());
+    }
+
+    /**
      * Convert a timestamp to an instant
      *
      * @param text timestamp from log line
@@ -201,22 +185,55 @@ public final class LogLine implements Comparable<LogLine> {
      * <p>
      * </ul>
      *
-     * @param timestamp timestamp
-     * @param app from application name
-     * @param message from log
      * @return query string or null if not a valid query, with trackingId
      *         removed, and perftest-flag set
      */
-    private static String queryOf(Environment mappingScript, String timestamp, String app, String message, String mdc) throws Exception {
-        Object[] args = new Object[]  { timestamp, app, message, mdc};
+    private static Output queryOfJS(Environment mappingScript, String line) throws Exception {
+        log.debug("Line {}", line );
+        Object output = mappingScript.callMethod(SCRIPT_METHOD, new Object[] { line } );
 
-        Object output = mappingScript.callMethod(SCRIPT_METHOD, args);
-        log.debug("Message {}. JS result {}", message, output);
+        log.debug("JS result {}", output);
 
         if (output instanceof Undefined) {
             return null;
         } else {
-            return (String)output;
+            String timestamp = mappingScript.getJavascriptObjectFieldAsString(output, "timestamp");
+            String app = mappingScript.getJavascriptObjectFieldAsString(output, "app");
+            String query = mappingScript.getJavascriptObjectFieldAsString(output, "query");
+            return new Output(timestamp, app, query);
+        }
+    }
+
+    private static class Output {
+        private final String timestamp;
+        private final String app;
+        private final String query;
+
+        public Output(String timestamp, String app, String query) {
+            this.timestamp = timestamp;
+            this.app = app;
+            this.query = query;
+        }
+
+        /**
+         * @return the timestamp
+         */
+        public String getTimestamp() {
+            return timestamp;
+        }
+
+        /**
+         * @return the app
+         */
+        public String getApp() {
+            return app;
+        }
+
+        /**
+         * @return the message
+         */
+        public String getQuery() {
+            return query;
         }
     }
 }
