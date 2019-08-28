@@ -40,8 +40,6 @@ public final class LogLine implements Comparable<LogLine> {
 
     private static final Logger log = LoggerFactory.getLogger(LogLine.class);
 
-    private static final ObjectMapper O = new ObjectMapper();
-
     public static final String SCRIPT_METHOD = "lineFilter";
 
     private final boolean valid;
