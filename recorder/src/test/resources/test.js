@@ -41,21 +41,21 @@ var lineFilter =  function (text) {
         return undefined;
     }
 
-    var queryString = params.substring(1, params.length - 1);
-    //Log.debug( "lineFilter. queryString:", queryString);
+    var paramsString = params.substring(1, params.length - 1);
+    //Log.debug( "lineFilter. paramsString:", paramsString);
 
-    var queryStringMatcher = "&" + queryString + "&";
-    if (queryStringMatcher.indexOf("&distrib=false&") > -1 ||
-        queryStringMatcher.indexOf("&" + PERFTEST_FLAG + "&") > -1) {
+    var paramsStringMatcher = "&" + paramsString + "&";
+    if (paramsStringMatcher.indexOf("&distrib=false&") > -1 ||
+        paramsStringMatcher.indexOf("&" + PERFTEST_FLAG + "&") > -1) {
         return undefined;
     }
 
     var query;
-    if( queryString.indexOf("child+of") !== -1 ) {
-        query = ( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&");
+    if( paramsString.indexOf("child+of") !== -1 ) {
+        query = ( paramsString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&");
     }
     else {
-        query = encodeURI(( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&"));
+        query = encodeURI(( paramsString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&"));
     }
     Log.debug( "lineFilter. result:", result);
     var result = 
