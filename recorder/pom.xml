@@ -9,6 +9,16 @@
 
     <artifactId>performance-test-recorder</artifactId>
     <packaging>jar</packaging>
+    <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>../filter</directory>
+            </testResource>
+        </testResources>
+     </build>
     
     <dependencies>
         <dependency>
