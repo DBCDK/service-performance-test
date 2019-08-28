@@ -18,15 +18,15 @@
  */
 package dk.dbc.service.performance.recorder;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dk.dbc.jslib.Environment;
+import jdk.nashorn.internal.runtime.Undefined;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
-import jdk.nashorn.internal.runtime.Undefined;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
