@@ -1,25 +1,38 @@
 use( "Log" );
 
 var PERFTEST_FLAG = "dbcPerfTest=true";
-
-// Log example:
-// {"timestamp":"2019-06-14T09:56:50.076+00:00","version":"1","message":"/search performed with query: \"Peter Handke\", field: author, exact: true, merge_workid: true, rows: 200","logger":"dk.dbc.laesekompas.suggester.webservice.SearchResource","thread":"http-thread-pool::http-listener(1)","level":"INFO","level_value":20000,"mdc":{"merge_workid":"true","requestType":"search","field":"author","query":"\"Peter Handke\"","exact":"true","rows":"200"}}
-// {"timestamp":"2019-06-14T10:19:14.949+00:00","version":"1","message":"suggestion performed with query: kjærs, collectcion: ALL","logger":"dk.dbc.laesekompas.suggester.webservice.SuggestResource","thread":"http-thread-pool::http-listener(2)","level":"INFO","level_value":20000,"mdc":{"requestType":"suggest","query":"kjærs","collection":"suggest-all"}}
+var SERVICE_NAME  = "suggester-laesekompas-webservice";
 
 var lineFilter =  function (line) {
-    var data = JSON.parse(line)
-    var timestamp = data["@timestamp"]
-    var message = data.message
-    var mdc = data.mdc
+    var data = JSON.parse(line);
+    var timestamp = data["@timestamp"];
+    var message = data.message;
+    var mdc = data.mdc;
+    var name = data["sys_kubernetes"]["labels"]["app"]["kubernetes"]["io/name"]
+    
+    Log.debug( "Entering lineFilter. Timestamp:", timestamp, ", message:'", message, "'");
 
-    Log.debug( "Entering lineFilter. Timestamp:", timestamp, ", message:'", message, "', mdc:", mdc);
-
-    if (mdc === "") {
-        Log.debug( "lineFilter. No mdc in line");
-        return ;
+    if( typeof name === "undefinded" || name === "" ) {
+        Log.debug("lineFilter. name is undefinded or empty");
+        return;
     }
 
-    if (! 'requestType' in mdc) {
+    if( name !== SERVICE_NAME ) {
+        Log.debug("lineFilter. name is not " + SERVICE_NAME);
+        return;
+    }
+
+    if( typeof mdc === "undefined" || mdc === "" ) {
+        Log.debug("lineFilter. mdc is undefinded or empty");
+        return;
+    }
+
+    if( typeof mdc !== "object") {
+        Log.debug( "lineFilter. mdc is not of type Object");
+        return
+    }
+
+    if (! ('requestType' in mdc)) {
         Log.debug( "Leaving lineFilter. Not a request. Skipped");
         return;
     }
@@ -28,7 +41,7 @@ var lineFilter =  function (line) {
     var requestType = mdc['requestType'];
     Log.debug( "lineFilter. requestType:", requestType);
 
-    if (! 'query' in mdc) {
+    if (! ('query' in mdc)) {
         Log.error( "Leaving lineFilter. Request is missing query. Skipped");
         return;
     }
@@ -36,7 +49,7 @@ var lineFilter =  function (line) {
     Log.debug( "lineFilter. query:", query);
 
     // Base request for suggest & search
-    var constructedQuery = "/" + requestType + "?query=" + encodeURI(query)
+    var constructedQuery = "/" + requestType + "?query=" + encodeURI(query);
     switch ( requestType ) {
         case "suggest":
             // mdc:{"requestType":"suggest","query":"kjærs","collection":"suggest-all"}
@@ -69,9 +82,9 @@ var lineFilter =  function (line) {
     var result =
         {
             "timestamp": timestamp,
-            "app": "",
+            "app": SERVICE_NAME,
             "query": constructedQuery
         };
-    Log.debug( "lineFilter. result:", result);
+    Log.debug( "lineFilter. result:", JSON.stringify(result));
     return result;
 };
