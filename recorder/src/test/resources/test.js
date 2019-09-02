@@ -2,7 +2,13 @@ use( "Log" );
 
 var PERFTEST_FLAG = "dbcPerfTest=true";
 
-var lineFilter =  function (timestamp, app, message) {
+var lineFilter =  function (text) {
+    
+    var data = JSON.parse(text)
+    var timestamp = data.timestamp;
+    var app = data.app;
+    var message = data.message;
+    
     Log.trace( "Entering lineFilter. Timestamp:", timestamp, ", app:", app, ", message:", message );
 
     var msg = message.split(/\s+/);
@@ -35,21 +41,28 @@ var lineFilter =  function (timestamp, app, message) {
         return undefined;
     }
 
-    var queryString = params.substring(1, params.length - 1);
-    Log.debug( "lineFilter. queryString:", queryString);
+    var paramsString = params.substring(1, params.length - 1);
+    //Log.debug( "lineFilter. paramsString:", paramsString);
 
-    var queryStringMatcher = "&" + queryString + "&";
-    if (queryStringMatcher.indexOf("&distrib=false&") > -1 ||
-        queryStringMatcher.indexOf("&" + PERFTEST_FLAG + "&") > -1) {
+    var paramsStringMatcher = "&" + paramsString + "&";
+    if (paramsStringMatcher.indexOf("&distrib=false&") > -1 ||
+        paramsStringMatcher.indexOf("&" + PERFTEST_FLAG + "&") > -1) {
         return undefined;
     }
 
-    if( queryString.indexOf("child+of") !== -1 ) {
-        result = ( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&");
+    var query;
+    if( paramsString.indexOf("child+of") !== -1 ) {
+        query = ( paramsString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&");
     }
     else {
-        result = encodeURI(( queryString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&"));
+        query = encodeURI(( paramsString + "&" + PERFTEST_FLAG ).replaceFirst("&trackingId=[^&]*&", "&"));
     }
     Log.debug( "lineFilter. result:", result);
+    var result = 
+    {
+        "timestamp": timestamp,
+        "app": app,
+        "query": query
+    };
     return result;
 };
