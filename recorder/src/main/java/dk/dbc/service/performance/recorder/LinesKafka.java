@@ -26,6 +26,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -77,7 +78,7 @@ public class LinesKafka extends LineSource {
 
         // It is nessecary to do a "dummy call" to poll()
         // before you can use seek()
-        ConsumerRecords<Long, String> records = kafka.poll(1000);
+        ConsumerRecords<Long, String> records = kafka.poll(Duration.ofMillis(1000L));
         if(records != null) {
             List<TopicPartition> tp = new ArrayList<TopicPartition>();
             for (PartitionInfo pi : kafka.partitionsFor(topicName)) {
@@ -93,7 +94,7 @@ public class LinesKafka extends LineSource {
     @Override
     protected String nextLine() throws IOException {
         while (iterator == null || !iterator.hasNext()) {
-            ConsumerRecords<Long, String> records = consumer.poll(60_000L);
+            ConsumerRecords<Long, String> records = consumer.poll(Duration.ofMillis(60_000L));
             iterator = records.iterator();
         }
         return iterator.next().value();
