@@ -78,8 +78,8 @@ public class LinesKafka extends LineSource {
 
         // It is nessecary to do a "dummy call" to poll()
         // before you can use seek()
-        ConsumerRecords<Long, String> records = kafka.poll(Duration.ofMillis(1000L));
-        if(records != null) {
+        ConsumerRecords<Long, String> records = kafka.poll(Duration.ofMillis(10_000L));
+        if (records != null && !records.isEmpty()) {
             List<TopicPartition> tp = new ArrayList<TopicPartition>();
             for (PartitionInfo pi : kafka.partitionsFor(topicName)) {
                 tp.add(new TopicPartition(topicName, pi.partition()));
@@ -93,8 +93,9 @@ public class LinesKafka extends LineSource {
 
     @Override
     protected String nextLine() throws IOException {
+        ConsumerRecords<Long, String> records;
         while (iterator == null || !iterator.hasNext()) {
-            ConsumerRecords<Long, String> records = consumer.poll(Duration.ofMillis(60_000L));
+            records = consumer.poll(Duration.ofMillis(10_000L));
             iterator = records.iterator();
         }
         return iterator.next().value();
