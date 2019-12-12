@@ -22,17 +22,18 @@ package dk.dbc.service.performance.replayer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.junit.Before;
 import org.junit.Test;
-
-import static java.util.Arrays.asList;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.LongSummaryStatistics;
 
+import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 public class LogCollectorTest {
 
@@ -59,6 +60,16 @@ public class LogCollectorTest {
         assertThat(stat.getAverage(), is(equalTo(20.0)));
         assertThat(stat.getMin(), is(equalTo(10L)));
         assertThat(stat.getMax(), is(equalTo(30L)));
+    }
+
+    @Test(timeout = 2_000L)
+    public void testCalculatePercentiles() throws Exception {
+        System.out.println("testCalculatePercentiles");
+        Percentile pc = collector.calculatePercentiles();
+
+        assertThat(pc.getData().length, is(equalTo(3)));
+        assertThat(pc.evaluate(50), is(equalTo(20D)));
+        assertThat(pc.evaluate(100), is(equalTo(30D)));
     }
 
     @Test(timeout = 2_000L)
