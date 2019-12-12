@@ -100,7 +100,7 @@ public class LogCollector {
 
     /**
      * Dump the log (as json) to the give OutputStream
-     *
+ *
      * @param os Stream to otput to
      * @throws IOException if anything goes wrong during writing
      */
