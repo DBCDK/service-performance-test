@@ -7,6 +7,11 @@ import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
 import java.io.IOException;
 
+/**
+ * Simple helper class to control the jackson serialization of class Percentile.
+ *
+ * @author Noah Torp-Smith (nots@dbc.dk)
+ */
 public class PercentileSerializer extends StdSerializer<Percentile> {
 
     public PercentileSerializer(Class<Percentile> t) {
@@ -15,6 +20,9 @@ public class PercentileSerializer extends StdSerializer<Percentile> {
 
     @Override
     public void serialize(Percentile p, JsonGenerator jsonGen, SerializerProvider provider) throws IOException {
+        if (p.getData().length < 1) {
+            return;
+        }
         jsonGen.writeStartObject();
         int[] percentiles = {50, 60, 70, 75, 80, 90, 95, 99};
         for (int pc : percentiles) {
