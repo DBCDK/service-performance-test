@@ -53,7 +53,7 @@ public class LogCollectorTest {
     @Test(timeout = 2_000L)
     public void testCalculateStats() throws Exception {
         System.out.println( "testCalculateStats" );
-        LongSummaryStatistics stat = collector.calulateStats();
+        LongSummaryStatistics stat = collector.calculateStats();
 
         assertThat(stat.getCount(), is(equalTo(3L)));
         assertThat(stat.getAverage(), is(equalTo(20.0)));
