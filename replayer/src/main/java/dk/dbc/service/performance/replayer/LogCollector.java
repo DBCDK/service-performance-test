@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Collecor of status for program progression
+ * Collector of status for program progression
  *
  * @author Mike Andersen (mran@dbc.dk)
  */
