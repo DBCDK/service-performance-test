@@ -21,6 +21,8 @@ package dk.dbc.service.performance.replayer;
  */
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -33,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Collecor of status for program progression
+ * Collector of status for program progression
  *
  * @author Mike Andersen (mran@dbc.dk)
  */
@@ -101,17 +103,22 @@ public class LogCollector {
     /**
      * Dump the log (as json) to the give OutputStream
      *
-     * @param os Stream to otput to
+     * @param os Stream to output to
      * @throws IOException if anything goes wrong during writing
      */
     public void dump(OutputStream os) throws IOException {
         if(os == null)
             return;
+        ObjectMapper mapper = new ObjectMapper();
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(Percentile.class, new PercentileSerializer(Percentile.class));
+        mapper.registerModule(module);
 
         Map status = new HashMap();
         status.put( "code", this.statusCode);
         status.put("message", this.statusMessage);
-        LongSummaryStatistics stat = calulateStats();
+        LongSummaryStatistics stat = calculateStats();
+        Percentile percentiles = calculatePercentiles();
 
         BufferedWriter w = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
         Map output = new HashMap();
@@ -119,9 +126,10 @@ public class LogCollector {
         output.put("loglines", log);
         output.put("counter", counterMap);
         output.put("callStat", stat);
+        output.put("percentiles", percentiles);
+
         output.put("status", status);
 
-        ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(w, output);
     }
 
@@ -130,13 +138,20 @@ public class LogCollector {
         return new LogEntry();
     }
 
-    public LongSummaryStatistics calulateStats() {
+    public LongSummaryStatistics calculateStats() {
         LongSummaryStatistics stat = log
                 .stream()
                 .filter(le -> ! le.getQuery().isEmpty())
                 .mapToLong(le -> le.getCallDuration())
                 .summaryStatistics();
         return stat;
+    }
+
+    public Percentile calculatePercentiles() {
+        Percentile p = new Percentile();
+        double[] data = log.stream().filter(le -> !le.getQuery().isEmpty()).mapToDouble(le -> (double) le.getCallDuration()).toArray();
+        p.setData(data);
+        return p;
     }
 
     public static class LogEntry {
