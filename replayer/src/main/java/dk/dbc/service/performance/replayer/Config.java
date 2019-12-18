@@ -103,7 +103,7 @@ public final class Config {
                 .longOpt("replay")
                 .hasArg()
                 .argName("REPLAY")
-                .desc("Replayspeed (ex. 110 is 10% slower than original speed, 0 means no delay between calls")
+                .desc("Replayspeed (ex. 110 is 10% faster than original speed, 0 means no delay between calls")
                 .build());
         return options;
     }
