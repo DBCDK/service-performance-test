@@ -149,7 +149,7 @@ public class Replayer implements JobListener{
      * replay speed
      */
     private long calculateDelay(long runtime, long originalTimeDelta) {
-        long nextRequestRealTime = originalTimeDelta / (config.getReplay() / 100);
+        long nextRequestRealTime =  (long) (originalTimeDelta / (config.getReplay() / 100.0));
         return Long.max(0, nextRequestRealTime - runtime);
     }
 
