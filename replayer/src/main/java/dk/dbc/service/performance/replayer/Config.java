@@ -34,6 +34,7 @@ import java.util.*;
  * @author Mike Andersen (mran@dbc.dk)
  */
 public final class Config {
+
     private static final Logger log = LoggerFactory.getLogger(Config.class);
 
     private final long durationConstraint;
@@ -43,9 +44,10 @@ public final class Config {
     private final String service;
     private final String input;
     private final String output;
-    private final int replay;
+    private final double replay;
     private final int callBufferSize;
     private final int maxDelayedCalls;
+    private boolean dryRun;
 
     private static Options options() {
         Options options = new Options();
@@ -105,6 +107,12 @@ public final class Config {
                 .argName("REPLAY")
                 .desc("Replayspeed (ex. 110 is 10% faster than original speed, 0 means no delay between calls")
                 .build());
+
+        options.addOption(Option.builder("n")
+                .longOpt("dry-run")
+                .desc("Dryrun don't perform actual calls")
+                .build());
+
         return options;
     }
 
@@ -127,16 +135,16 @@ public final class Config {
             throw new ParseException("Unexpected positional argument(s) at: " + positionalArguments.next());
 
         this.durationConstraint = args.take("d", "1h", t -> {
-            return parseTimeSpec(t);
-        });
+                                        return parseTimeSpec(t);
+                                    });
 
         this.replayTime = args.take("t", "1h", t -> {
-            return parseTimeSpec(t);
-        });
+                                return parseTimeSpec(t);
+                            });
 
         String callTimeOption = args.take("c", "5s/10/100", t -> t);
         String[] parts = callTimeOption.split("(/)", 3);
-        if(parts.length != 3) {
+        if (parts.length != 3) {
             throw new ParseException("Calltime constraint not valid");
         }
         this.callTimeConstraint = parseTimeSpec(parts[0]);
@@ -149,9 +157,9 @@ public final class Config {
 
         this.service = args.take("s", null, t -> t);
         this.input = args.take("i", null, t -> t);
-        this.output= args.take("o", null, t -> t);
+        this.output = args.take("o", null, t -> t);
 
-        if(this.service == null)
+        if (this.service == null)
             throw new ParseException("Service-URL is mandatory");
 
         this.limit = args.take("l", String.valueOf(Long.MAX_VALUE), t -> {
@@ -161,12 +169,22 @@ public final class Config {
                            return value;
                        });
 
-        this.replay = args.take( "r", "100", t -> {
-            int value = Integer.parseInt(t);
-            if( value < 0 || value > 200)
-                throw new RuntimeException("Replay speed needs to be between 0 and 200 (0 means no delay)");
-            return value;
-        });
+        this.replay = args.take("r", "100", t -> {
+                            int value = Integer.parseInt(t);
+                            double scaler;
+                            if (value == 0) {
+                                scaler = 0.0;
+                            } else if (value < 1) {
+                                throw new RuntimeException("Replay speed needs to be above 1");
+                            } else {
+                                scaler = 100.0 / (double) value;
+
+                            }
+                            log.debug("timing scaler: {}", scaler);
+                            return scaler;
+                        });
+
+        this.dryRun = args.isSet("n");
 
         log.debug(this.toString());
     }
@@ -205,14 +223,14 @@ public final class Config {
     public Map asMap() {
         return Collections.unmodifiableMap(new HashMap<String, String>() {
             {
-                put( "durationConstraint", String.valueOf(durationConstraint));
-                put( "replayTime", String.valueOf(replayTime));
-                put( "callConstraint", String.valueOf(callTimeConstraint) + "/" + maxDelayedCalls + "/" + callBufferSize);
-                put( "limit", String.valueOf(limit));
-                put( "service", service);
-                put( "input", input);
-                put( "output", output);
-                put( "replay", String.valueOf(replay));
+                put("durationConstraint", String.valueOf(durationConstraint));
+                put("replayTime", String.valueOf(replayTime));
+                put("callConstraint", String.valueOf(callTimeConstraint) + "/" + maxDelayedCalls + "/" + callBufferSize);
+                put("limit", String.valueOf(limit));
+                put("service", service);
+                put("input", input);
+                put("output", output);
+                put("replay", String.valueOf(replay));
             }
         });
     }
@@ -233,7 +251,7 @@ public final class Config {
         return limit;
     }
 
-    public int getReplay() {
+    public double getReplay() {
         return replay;
     }
 
@@ -249,7 +267,15 @@ public final class Config {
         return output;
     }
 
-    public int getCallBufferSize() { return callBufferSize; }
+    public int getCallBufferSize() {
+        return callBufferSize;
+    }
 
-    public int getMaxDelayedCalls() { return maxDelayedCalls; }
+    public int getMaxDelayedCalls() {
+        return maxDelayedCalls;
+    }
+
+    public boolean isDryRun() {
+        return dryRun;
+    }
 }
