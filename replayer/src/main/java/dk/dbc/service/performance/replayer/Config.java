@@ -44,11 +44,13 @@ public final class Config {
     private final String service;
     private final String input;
     private final String output;
-    private final double replay;
-    private boolean fullThrottle;
+    private final double timeScale;
+    private final boolean fullThrottle;
     private final int callBufferSize;
     private final int maxDelayedCalls;
-    private boolean dryRun;
+    private final boolean dryRun;
+
+    private final Map<String, String> map;
 
     private static Options options() {
         Options options = new Options();
@@ -165,23 +167,36 @@ public final class Config {
                            return value;
                        });
 
-        this.replay = args.take("r", "100", t -> {
-                            int value = Integer.parseInt(t);
-                            double scaler;
-                            if (value == 0) {
-                                scaler = 0.0;
-                            } else if (value < 1) {
-                                throw new RuntimeException("Replay speed needs to be above 1");
-                            } else {
-                                scaler = 100.0 / (double) value;
-                            }
-                            log.debug("timing scaler: {}", scaler);
-                            return scaler;
-                        });
+        this.timeScale = args.take("r", "100", t -> {
+                               int value = Integer.parseInt(t);
+                               double scaler;
+                               if (value == 0) {
+                                   scaler = 0.0;
+                               } else if (value < 1) {
+                                   throw new RuntimeException("Replay speed needs to be above 1");
+                               } else {
+                                   scaler = 100.0 / (double) value;
+                               }
+                               log.debug("timing scaler: {}", scaler);
+                               return scaler;
+                           });
 
         this.fullThrottle = args.take("r", "100", t -> Integer.parseInt(t) == 0);
         this.dryRun = args.isSet("n");
 
+        this.map = Collections.unmodifiableMap(new HashMap<String, String>() {
+            {
+                put("durationConstraint", String.valueOf(durationConstraint));
+                put("replayTime", String.valueOf(replayTime));
+                put("callConstraint", String.valueOf(callTimeConstraint) + "/" + maxDelayedCalls + "/" + callBufferSize);
+                put("limit", String.valueOf(limit));
+                put("service", service);
+                put("input", input);
+                put("output", output);
+                put("replay", args.take("r", "100", t -> t));
+                put("dryRun", String.valueOf(dryRun));
+            }
+        });
         log.debug(this.toString());
     }
 
@@ -217,19 +232,7 @@ public final class Config {
     }
 
     public Map asMap() {
-        return Collections.unmodifiableMap(new HashMap<String, String>() {
-            {
-                put("durationConstraint", String.valueOf(durationConstraint));
-                put("replayTime", String.valueOf(replayTime));
-                put("callConstraint", String.valueOf(callTimeConstraint) + "/" + maxDelayedCalls + "/" + callBufferSize);
-                put("limit", String.valueOf(limit));
-                put("service", service);
-                put("input", input);
-                put("output", output);
-                put("replay", String.valueOf(replay));
-                put("dryRun", String.valueOf(dryRun));
-            }
-        });
+        return map;
     }
 
     public long getDurationConstraint() {
@@ -248,8 +251,8 @@ public final class Config {
         return limit;
     }
 
-    public double getReplay() {
-        return replay;
+    public double getTimeScale() {
+        return timeScale;
     }
 
     public String getService() {
