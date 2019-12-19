@@ -1,4 +1,3 @@
-package dk.dbc.service.performance.replayer;
 /*
  * Copyright (C) 2019 DBC A/S (http://dbc.dk/)
  *
@@ -19,6 +18,7 @@ package dk.dbc.service.performance.replayer;
  *
  * File created: 20/03/2019
  */
+package dk.dbc.service.performance.replayer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -40,25 +40,37 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Mike Andersen (mran@dbc.dk)
  */
 public class LogCollector {
-    private List<LogEntry> log;
+
+    private final List<LogEntry> log;
     private Map conf;
-    private final ConcurrentMap<String, AtomicLong> counterMap ;
+    private final ConcurrentMap<String, AtomicLong> counterMap;
     private int statusCode;
     private String statusMessage;
 
+    private final boolean fullThrottle;
 
-
-    public LogCollector() {
-        log =  new ArrayList<LogEntry>(100);
+    LogCollector() {
+        log = new ArrayList<>(100);
         conf = new HashMap();
         counterMap = new ConcurrentHashMap<>();
+        fullThrottle = false;
+    }
+
+    public LogCollector(Config config) {
+        log = new ArrayList<>(100);
+        conf = new HashMap();
+        counterMap = new ConcurrentHashMap<>();
+        this.fullThrottle = config.isFullThrottle();
     }
 
     /**
      * Add the config map to the log
+     *
      * @param conf Map of configurations
      */
-    public void addConfig(Map conf) { this.conf = conf; }
+    public void addConfig(Map conf) {
+        this.conf = conf;
+    }
 
     /**
      * Add one status note to the log
@@ -73,7 +85,8 @@ public class LogCollector {
 
     /**
      * Add the complete program run status
-     * @param code The exitcode for the program
+     *
+     * @param code    The exitcode for the program
      * @param message A desciption of the exit-code
      */
     public void addRunStatus(int code, String message) {
@@ -89,7 +102,6 @@ public class LogCollector {
     public void addEntry(LogEntry entry) {
         log.add(entry);
     }
-
 
     /**
      * Increment the counter for httpResponse codes
@@ -107,7 +119,7 @@ public class LogCollector {
      * @throws IOException if anything goes wrong during writing
      */
     public void dump(OutputStream os) throws IOException {
-        if(os == null)
+        if (os == null)
             return;
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
@@ -115,7 +127,7 @@ public class LogCollector {
         mapper.registerModule(module);
 
         Map status = new HashMap();
-        status.put( "code", this.statusCode);
+        status.put("code", this.statusCode);
         status.put("message", this.statusMessage);
         LongSummaryStatistics stat = calculateStats();
         Percentile percentiles = calculatePercentiles();
@@ -126,13 +138,13 @@ public class LogCollector {
         output.put("loglines", log);
         output.put("counter", counterMap);
         output.put("callStat", stat);
-        output.put("percentiles", percentiles);
+        if (!fullThrottle)
+            output.put("percentiles", percentiles);
 
         output.put("status", status);
 
         mapper.writeValue(w, output);
     }
-
 
     public static LogEntry newEntry() {
         return new LogEntry();
@@ -141,7 +153,7 @@ public class LogCollector {
     public LongSummaryStatistics calculateStats() {
         LongSummaryStatistics stat = log
                 .stream()
-                .filter(le -> ! le.getQuery().isEmpty())
+                .filter(le -> !le.getQuery().isEmpty())
                 .mapToLong(le -> le.getCallDuration())
                 .summaryStatistics();
         return stat;
@@ -155,6 +167,7 @@ public class LogCollector {
     }
 
     public static class LogEntry {
+
         private long originalTimeDelta;
         private long callDelay;
         private long callDuration;
@@ -191,13 +204,13 @@ public class LogCollector {
         @Override
         public String toString() {
             return "LogEntry{" +
-                    "  timestamp=" + timestamp +
-                    ", originalTimeDelta=" + originalTimeDelta +
-                    ", callDelay=" + callDelay +
-                    ", callDuration=" + callDuration +
-                    ", query='" + query + "'" +
-                    ", status='" + status + "'" +
-                    '}';
+                   "  timestamp=" + timestamp +
+                   ", originalTimeDelta=" + originalTimeDelta +
+                   ", callDelay=" + callDelay +
+                   ", callDuration=" + callDuration +
+                   ", query='" + query + "'" +
+                   ", status='" + status + "'" +
+                   '}';
         }
 
         public long getOriginalTimeDelta() {

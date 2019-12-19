@@ -125,7 +125,7 @@ public final class Config {
 
     private final int sortBufferSize;
     private final long duration;
-    private final long runduration;
+    private final long runDuration;
     private final long limit;
     private final String kafka;
     private final String input;
@@ -152,8 +152,8 @@ public final class Config {
         return duration;
     }
 
-    public long getRunduration() {
-        return runduration;
+    public long getRunDuration() {
+        return runDuration;
     }
 
     public long getLimit() {
@@ -194,7 +194,7 @@ public final class Config {
                                     return value;
                                 });
         this.duration = args.take("d", "1h", Config::parseTimeSpec);
-        this.runduration = args.take("D", "1h", Config::parseTimeSpec);
+        this.runDuration = args.take("D", "1h", Config::parseTimeSpec);
         this.kafka = args.take("k", null, t -> t);
         this.input = args.take("i", null, t -> t);
         switch (countNotNull(this.kafka, this.input)) {
@@ -225,10 +225,10 @@ public final class Config {
     private static long parseTimeSpec(String t) throws RuntimeException {
         String[] parts = t.split("(?=[^0-9])", 2);
         if (parts.length != 2)
-            throw new RuntimeException();
+            throw new IllegalArgumentException("Duration is not in valid format [number]d/h/m/s");
         long number = Long.parseUnsignedLong(parts[0]);
         if (number < 1)
-            throw new RuntimeException();
+            throw new IllegalArgumentException("Duration is negative");
         switch (parts[1].toLowerCase(Locale.ROOT)) {
             case "s":
                 return Duration.ofSeconds(number).toMillis();
@@ -239,7 +239,7 @@ public final class Config {
             case "d":
                 return Duration.ofDays(number).toMillis();
             default:
-                throw new RuntimeException();
+                throw new IllegalArgumentException("Duration is not in valid format [number]d/h/m/s");
         }
     }
 
@@ -254,7 +254,7 @@ public final class Config {
 
     @Override
     public String toString() {
-        return "Config{" + "sortBufferSize=" + sortBufferSize + ", duration=" + duration + ", runduration=" + runduration + ", limit=" + limit + ", kafka=" + kafka + ", input=" + input + ", output=" + output + ", application=" + application + ", append=" + append + '}';
+        return "Config{" + "sortBufferSize=" + sortBufferSize + ", duration=" + duration + ", runduration=" + runDuration + ", limit=" + limit + ", kafka=" + kafka + ", input=" + input + ", output=" + output + ", application=" + application + ", append=" + append + '}';
     }
 
 }

@@ -45,6 +45,7 @@ public final class Config {
     private final String input;
     private final String output;
     private final double replay;
+    private boolean fullThrottle;
     private final int callBufferSize;
     private final int maxDelayedCalls;
     private boolean dryRun;
@@ -173,12 +174,12 @@ public final class Config {
                                 throw new RuntimeException("Replay speed needs to be above 1");
                             } else {
                                 scaler = 100.0 / (double) value;
-
                             }
                             log.debug("timing scaler: {}", scaler);
                             return scaler;
                         });
 
+        this.fullThrottle = args.take("r", "100", t -> Integer.parseInt(t) == 0);
         this.dryRun = args.isSet("n");
 
         log.debug(this.toString());
@@ -189,13 +190,13 @@ public final class Config {
      *          s, m, h or d for resp. Seconds, Minutes, Hours or days
      * @return
      */
-    private static Long parseTimeSpec(String t) {
+    private static long parseTimeSpec(String t) throws RuntimeException {
         String[] parts = t.split("(?=[^0-9])", 2);
         if (parts.length != 2)
-            throw new RuntimeException();
+            throw new IllegalArgumentException("Duration is not in valid format [number]d/h/m/s");
         long number = Long.parseUnsignedLong(parts[0]);
         if (number < 1)
-            throw new RuntimeException();
+            throw new IllegalArgumentException("Duration is negative");
         switch (parts[1].toLowerCase(Locale.ROOT)) {
             case "s":
                 return Duration.ofSeconds(number).toMillis();
@@ -206,7 +207,7 @@ public final class Config {
             case "d":
                 return Duration.ofDays(number).toMillis();
             default:
-                throw new RuntimeException();
+                throw new IllegalArgumentException("Duration is not in valid format [number]d/h/m/s");
         }
     }
 
@@ -226,6 +227,7 @@ public final class Config {
                 put("input", input);
                 put("output", output);
                 put("replay", String.valueOf(replay));
+                put("dryRun", String.valueOf(dryRun));
             }
         });
     }
@@ -272,5 +274,9 @@ public final class Config {
 
     public boolean isDryRun() {
         return dryRun;
+    }
+
+    public boolean isFullThrottle() {
+        return fullThrottle;
     }
 }

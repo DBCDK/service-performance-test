@@ -58,7 +58,7 @@ public class Replayer implements JobListener {
      *         prematurely
      */
     public int run() {
-        LogCollector logCollector = new LogCollector();
+        LogCollector logCollector = new LogCollector(config);
         CallTimeWathcer wathcer = new CallTimeWathcer(config.getCallBufferSize(), config.getMaxDelayedCalls(), config.getCallTimeConstraint());
         String input = config.getInput();
         ExecutorService executorService = Executors.newCachedThreadPool();

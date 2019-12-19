@@ -103,7 +103,7 @@ public class Recorder {
         return new OutputWriter(os,
                                 config.getSortBufferSize(),
                                 config.getDuration(),
-                                config.getRunduration(),
+                                config.getRunDuration(),
                                 config.getLimit(),
                                 new HeaderOutput(config));
     }
