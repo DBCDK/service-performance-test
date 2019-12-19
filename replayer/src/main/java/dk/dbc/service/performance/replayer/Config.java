@@ -134,13 +134,8 @@ public final class Config {
         if (positionalArguments.hasNext())
             throw new ParseException("Unexpected positional argument(s) at: " + positionalArguments.next());
 
-        this.durationConstraint = args.take("d", "1h", t -> {
-                                        return parseTimeSpec(t);
-                                    });
-
-        this.replayTime = args.take("t", "1h", t -> {
-                                return parseTimeSpec(t);
-                            });
+        this.durationConstraint = args.take("d", "1h", Config::parseTimeSpec);
+        this.replayTime = args.take("t", "1h", Config::parseTimeSpec);
 
         String callTimeOption = args.take("c", "5s/10/100", t -> t);
         String[] parts = callTimeOption.split("(/)", 3);
@@ -194,7 +189,7 @@ public final class Config {
      *          s, m, h or d for resp. Seconds, Minutes, Hours or days
      * @return
      */
-    private Long parseTimeSpec(String t) {
+    private static Long parseTimeSpec(String t) {
         String[] parts = t.split("(?=[^0-9])", 2);
         if (parts.length != 2)
             throw new RuntimeException();

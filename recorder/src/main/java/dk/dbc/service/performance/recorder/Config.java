@@ -62,7 +62,6 @@ public final class Config {
                 .desc("Recording should run at most this long ie. 15s or 3h (default: 1h)")
                 .build());
 
-
         options.addOption(Option.builder("l")
                 .longOpt("limit")
                 .hasArg()
@@ -153,7 +152,9 @@ public final class Config {
         return duration;
     }
 
-    public long getRunduration() { return runduration; }
+    public long getRunduration() {
+        return runduration;
+    }
 
     public long getLimit() {
         return limit;
@@ -192,46 +193,8 @@ public final class Config {
                                         throw new RuntimeException("sort buffer needs to be atleast 0");
                                     return value;
                                 });
-        this.duration = args.take("d", "1h", t -> {
-                              String[] parts = t.split("(?=[^0-9])", 2);
-                              if (parts.length != 2)
-                                  throw new RuntimeException();
-                              long number = Long.parseUnsignedLong(parts[0]);
-                              if (number < 1)
-                                  throw new RuntimeException();
-                              switch (parts[1].toLowerCase(Locale.ROOT)) {
-                                  case "s":
-                                      return Duration.ofSeconds(number).toMillis();
-                                  case "m":
-                                      return Duration.ofMinutes(number).toMillis();
-                                  case "h":
-                                      return Duration.ofHours(number).toMillis();
-                                  case "d":
-                                      return Duration.ofDays(number).toMillis();
-                                  default:
-                                      throw new RuntimeException();
-                              }
-                          });
-        this.runduration = args.take("D", "1h", t -> {
-            String[] parts = t.split("(?=[^0-9])", 2);
-            if (parts.length != 2)
-                throw new RuntimeException();
-            long number = Long.parseUnsignedLong(parts[0]);
-            if (number < 1)
-                throw new RuntimeException();
-            switch (parts[1].toLowerCase(Locale.ROOT)) {
-                case "s":
-                    return Duration.ofSeconds(number).toMillis();
-                case "m":
-                    return Duration.ofMinutes(number).toMillis();
-                case "h":
-                    return Duration.ofHours(number).toMillis();
-                case "d":
-                    return Duration.ofDays(number).toMillis();
-                default:
-                    throw new RuntimeException();
-            }
-        });
+        this.duration = args.take("d", "1h", Config::parseTimeSpec);
+        this.runduration = args.take("D", "1h", Config::parseTimeSpec);
         this.kafka = args.take("k", null, t -> t);
         this.input = args.take("i", null, t -> t);
         switch (countNotNull(this.kafka, this.input)) {
@@ -257,6 +220,27 @@ public final class Config {
                        });
         this.application = args.take("a", null, t -> t);
         this.javascript = args.take("j", null, t -> t);
+    }
+
+    private static long parseTimeSpec(String t) throws RuntimeException {
+        String[] parts = t.split("(?=[^0-9])", 2);
+        if (parts.length != 2)
+            throw new RuntimeException();
+        long number = Long.parseUnsignedLong(parts[0]);
+        if (number < 1)
+            throw new RuntimeException();
+        switch (parts[1].toLowerCase(Locale.ROOT)) {
+            case "s":
+                return Duration.ofSeconds(number).toMillis();
+            case "m":
+                return Duration.ofMinutes(number).toMillis();
+            case "h":
+                return Duration.ofHours(number).toMillis();
+            case "d":
+                return Duration.ofDays(number).toMillis();
+            default:
+                throw new RuntimeException();
+        }
     }
 
     private static int countNotNull(Object... objs) {
