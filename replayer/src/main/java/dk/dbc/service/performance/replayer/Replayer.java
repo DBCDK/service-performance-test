@@ -58,7 +58,7 @@ public class Replayer implements JobListener {
      *         prematurely
      */
     public int run() {
-        LogCollector logCollector = new LogCollector();
+        LogCollector logCollector = new LogCollector(config);
         CallTimeWathcer wathcer = new CallTimeWathcer(config.getCallBufferSize(), config.getMaxDelayedCalls(), config.getCallTimeConstraint());
         String input = config.getInput();
         ExecutorService executorService = Executors.newCachedThreadPool();
@@ -70,7 +70,6 @@ public class Replayer implements JobListener {
             runStatus.setStatus(Status.Code.IOERROR, "File " + input + " does not exist or is not a file");
         } else {
             Instant timeStarted = Instant.now();
-            long runtime = 0;
 
             try (BufferedReader br = getBufferedReader(input)) {
                 long numLines = 0;
@@ -98,6 +97,7 @@ public class Replayer implements JobListener {
                     ReplayerTask task = new ReplayerTask(config, logCollector, wathcer, logLine, this, logEntry);
                     executorService.execute(task);
 
+                    long runtime = Duration.between(timeStarted, Instant.now()).toMillis();
                     long originalTimeDelta = logLine.getTimeDelta();
                     long callDelay = calculateDelay(runtime, originalTimeDelta);
                     logEntry.setTimes(originalTimeDelta, callDelay);
@@ -114,8 +114,6 @@ public class Replayer implements JobListener {
                         runStatus.setStatus(Status.Code.RUNTIME_EXCEEDED, "Runtime exceeded (" + config.getDurationConstraint() + "ms)");
                         break;
                     }
-
-                    runtime = originalTimeDelta;
                 }
             } catch (IOException ex) {
                 runStatus.setStatus(Status.Code.IOERROR, "Error processing input: " + ex.getMessage());
@@ -150,7 +148,9 @@ public class Replayer implements JobListener {
      *         replay speed
      */
     private long calculateDelay(long runtime, long originalTimeDelta) {
-        long nextRequestRealTime = (long) ( originalTimeDelta / ( config.getReplay() / 100.0 ) );
+
+        long nextRequestRealTime = (long) ( (double) originalTimeDelta  * config.getTimeScale());
+        log.debug("replayTime: {}, realTime: {}", originalTimeDelta, nextRequestRealTime);
         return Long.max(0, nextRequestRealTime - runtime);
     }
 

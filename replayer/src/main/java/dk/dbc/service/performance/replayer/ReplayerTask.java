@@ -1,4 +1,5 @@
 package dk.dbc.service.performance.replayer;
+
 /*
  * Copyright (C) 2019 DBC A/S (http://dbc.dk/)
  *
@@ -27,14 +28,16 @@ import org.slf4j.LoggerFactory;
  * An asynchronous task designed to call a service instance,
  * log and monitor the duration of the calls
  */
-public class ReplayerTask implements Runnable{
+public class ReplayerTask implements Runnable {
+
     private static final Logger log = LoggerFactory.getLogger(ReplayerTask.class);
 
-    private ServiceSender sender;
-    private LogLine logLine;
-    private CallTimeWathcer watcher;
-    private JobListener jobListener;
-    private LogCollector.LogEntry logEntry;
+    private final ServiceSender sender;
+    private final LogLine logLine;
+    private final CallTimeWathcer watcher;
+    private final JobListener jobListener;
+    private final LogCollector.LogEntry logEntry;
+    private final boolean dryRun;
 
     public ReplayerTask(Config config, LogCollector logCollector, CallTimeWathcer watcher, LogLine logLine, JobListener jobListener, LogCollector.LogEntry logEntry) {
         this.watcher = watcher;
@@ -43,15 +46,18 @@ public class ReplayerTask implements Runnable{
         this.logLine = logLine;
         this.jobListener = jobListener;
         this.logEntry = logEntry;
+        this.dryRun = config.isDryRun();
     }
 
     @Override
     public void run() {
-        log.debug( "Running: logLine=" + logLine);
-        long duration = sender.send(logLine, logEntry);
+        log.debug("Running: logLine={}{}", logLine, dryRun ? " (dry-run)" : "");
+        long duration = 0;
+        if (!dryRun)
+            duration = sender.send(logLine, logEntry);
         try {
             watcher.addCallTime(duration); // Can throw CallTimeExceededException
-        } catch (CallTimeExceededException ex ) {
+        } catch (CallTimeExceededException ex) {
             notifyListeners();
         }
     }
